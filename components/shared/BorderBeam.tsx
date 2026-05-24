@@ -31,6 +31,7 @@ export function BorderBeam({ className = "" }: Props) {
     ro.observe(container);
 
     const tick = () => {
+      if (w === 0) { raf = requestAnimationFrame(tick); return; }
       const t = ((performance.now() - start) % LOOP_MS) / LOOP_MS;
       char.style.transform = `translateX(${t * w}px)`;
       raf = requestAnimationFrame(tick);
