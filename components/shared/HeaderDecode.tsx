@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function HeaderDecode({ text, className = "", as: Tag = "h2" }: Props) {
-  const { ref, inView } = useInView<HTMLElement>({ threshold: 0.3 });
+  const { ref, inView } = useInView<HTMLHeadingElement>({ threshold: 0.3 });
   const reduced = useReducedMotion();
   const [display, setDisplay] = useState(text);
   const hasDecoded = useRef(false);
@@ -44,8 +44,7 @@ export function HeaderDecode({ text, className = "", as: Tag = "h2" }: Props) {
 
   return (
     <Tag
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ref={ref as unknown as React.RefObject<any>}
+      ref={ref as React.RefObject<HTMLHeadingElement>}
       aria-label={text}
       className={`font-[var(--font-display)] text-[13px] font-normal tracking-[0.04em] text-[var(--fg-strong)] lowercase ${className}`}
     >
