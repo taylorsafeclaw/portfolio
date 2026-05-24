@@ -1,0 +1,61 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e4]:
+      - img
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - generic: ·
+            - generic "Taylor" [ref=e8]: ·
+            - generic: ·
+          - generic:
+            - generic:
+              - img
+              - img
+              - img
+              - img
+        - paragraph [ref=e10]:
+          - text: Hi, I'm Taylor. Builder from the Bay.
+          - strong [ref=e11]: Repeat founder.
+          - text: Shipped startups from 0 → 1, gone deep on enterprise systems, now back to building. Mostly drawn to the parts other people skip, where taste compounds.
+        - generic [ref=e13]:
+          - link "selected work →" [ref=e14] [cursor=pointer]:
+            - /url: "#selected-work"
+          - link "taylor@taylorallen.dev" [ref=e15] [cursor=pointer]:
+            - /url: mailto:taylor@taylorallen.dev
+    - generic [ref=e16]:
+      - heading "selected work" [level=2] [ref=e17]
+      - generic [ref=e18]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: █
+          - generic [ref=e23]:
+            - text: poppin
+            - paragraph [ref=e24]: social events app · co-founder & cto · pear-backed · exited
+          - generic [ref=e25]: 2021–2023
+        - generic [ref=e29]:
+          - generic [ref=e30]: ▓
+          - generic [ref=e31]:
+            - text: stanford health care
+            - paragraph [ref=e32]: enterprise architecture · reference architecture author · arb
+          - generic [ref=e33]: 2023–2025
+        - generic [ref=e37]:
+          - generic [ref=e38]: ▒
+          - generic [ref=e39]:
+            - text: current build
+            - paragraph [ref=e40]: ai/llm tooling · building in public · shipping
+          - generic [ref=e41]: 2025–
+    - paragraph [ref=e43]:
+      - generic [ref=e45]: Taylor Allen
+      - generic [ref=e46]:
+        - generic [ref=e47]: ·
+        - generic [ref=e48]: "2026"
+      - generic [ref=e49]:
+        - generic [ref=e50]: ·
+        - generic [ref=e51]: Bay Area
+      - generic [ref=e52]:
+        - generic [ref=e53]: ·
+        - link "taylor@taylorallen.dev" [ref=e54] [cursor=pointer]:
+          - /url: mailto:taylor@taylorallen.dev
+  - button "Open Next.js Dev Tools" [ref=e60] [cursor=pointer]:
+    - img [ref=e61]
+  - alert [ref=e64]
