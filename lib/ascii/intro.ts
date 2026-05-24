@@ -29,6 +29,13 @@ const ECHO_OFFSET = 0.15;
 const PEAK_ALPHA = 0.50;
 const BLOOM_REACH = 1.05;
 
+const TWO_SIGMA_SQ = 2 * SIGMA * SIGMA;
+const TWO_ECHO_SIGMA_SQ = 2 * ECHO_SIGMA * ECHO_SIGMA;
+const SIGMA_REACH = SIGMA * 2.5;
+const BLOOM_SPAN = BLOOM_END - DORMANT_END;
+const CROSSFADE_START = BLOOM_END - 300;
+const DISSOLVE_SPAN = INTRO_DURATION - PEAK_END;
+
 function cellHash(col: number, row: number): number {
   return ((col * 7919 + row * 104729 + col * row * 31) % 1000) / 1000;
 }
@@ -51,8 +58,11 @@ export class IntroEngine {
   private distances: Float32Array;
   private delays: Float32Array;
   private speeds: Float32Array;
+  private hashes1: Float32Array;
+  private hashes2: Float32Array;
   private cols: number;
   private total: number;
+  private _result = { rampIdx: 0, alpha: 0 };
 
   constructor(
     cols: number,
@@ -69,6 +79,8 @@ export class IntroEngine {
     this.distances = new Float32Array(this.total);
     this.delays = new Float32Array(this.total);
     this.speeds = new Float32Array(this.total);
+    this.hashes1 = new Float32Array(this.total);
+    this.hashes2 = new Float32Array(this.total);
 
     const halfW = Math.max(1, cols / 2);
     const halfH = Math.max(1, rows / 2);
@@ -84,6 +96,8 @@ export class IntroEngine {
       this.distances[i] = Math.sqrt(px * px + py * py) / diag;
 
       const h = cellHash(col, row);
+      this.hashes1[i] = h;
+      this.hashes2[i] = cellHash2(col, row);
       this.speeds[i] = 0.75 + h * 0.5;
       this.textureSeeds[i] = Math.floor(h * 6);
       this.delays[i] = (h - 0.5) * 0.06;
@@ -109,7 +123,9 @@ export class IntroEngine {
       Math.min(zoneCap, Math.round(rawRamp + breathOffset)),
     );
 
-    return { rampIdx: Math.min(RAMP_LEN - 2, rampIdx), alpha: PEAK_ALPHA };
+    this._result.rampIdx = Math.min(RAMP_LEN - 2, rampIdx);
+    this._result.alpha = PEAK_ALPHA;
+    return this._result;
   }
 
   getRamp(
@@ -129,24 +145,22 @@ export class IntroEngine {
       const fadeIn = Math.min(1, elapsed / 100);
       let alpha = 0.15 + fadeIn * 0.15;
 
-      const flickerPhase = cellHash(col, row) * 6.28;
-      const flickerFreq = 0.005 + cellHash2(col, row) * 0.004;
+      const flickerPhase = this.hashes1[idx] * 6.28;
+      const flickerFreq = 0.005 + this.hashes2[idx] * 0.004;
       const flickerWave = Math.sin(elapsed * flickerFreq + flickerPhase);
       const flickerIntensity = Math.max(0, (flickerWave - 0.92) / 0.08);
 
       const rampBoost = Math.floor(flickerIntensity * 2);
       alpha += flickerIntensity * 0.15;
 
-      return {
-        rampIdx: Math.min(RAMP_LEN - 2, seed + rampBoost),
-        alpha,
-      };
+      this._result.rampIdx = Math.min(RAMP_LEN - 2, seed + rampBoost);
+      this._result.alpha = alpha;
+      return this._result;
     }
 
     // --- Phase 2: Bloom (100-1800ms) ---
     if (elapsed < BLOOM_END) {
-      const bloomT =
-        (elapsed - DORMANT_END) / (BLOOM_END - DORMANT_END);
+      const bloomT = (elapsed - DORMANT_END) / BLOOM_SPAN;
       const easedT = 1 - Math.pow(1 - bloomT, 1.8);
       const wavePos = easedT * BLOOM_REACH;
 
@@ -158,19 +172,21 @@ export class IntroEngine {
 
       const sdf = dist - effectiveWavePos;
 
-      const gaussAlpha = Math.exp(-(sdf * sdf) / (2 * SIGMA * SIGMA));
+      const gaussAlpha = Math.exp(-(sdf * sdf) / TWO_SIGMA_SQ);
 
       const echoWavePos = Math.max(0, effectiveWavePos - ECHO_OFFSET);
       const echoSdf = dist - echoWavePos;
       const echoGauss = Math.exp(
-        -(echoSdf * echoSdf) / (2 * ECHO_SIGMA * ECHO_SIGMA),
+        -(echoSdf * echoSdf) / TWO_ECHO_SIGMA_SQ,
       );
 
       const behind = Math.max(0, -sdf);
       const settleT = Math.min(1, behind / 0.3);
       const settleEased = settleT * settleT * (3 - 2 * settleT);
 
-      const peak = this.computePeakState(dist, speed, elapsed, col, row);
+      this.computePeakState(dist, speed, elapsed, col, row);
+      const peakRampIdx = this._result.rampIdx;
+      const peakAlpha = this._result.alpha;
 
       const bloomInfluence =
         Math.max(gaussAlpha, settleEased) * ignitionFactor;
@@ -179,30 +195,28 @@ export class IntroEngine {
 
       const densityT = Math.max(
         0,
-        1 - Math.abs(sdf) / (SIGMA * 2.5),
+        1 - Math.abs(sdf) / SIGMA_REACH,
       );
       const waveRamp = Math.min(
         RAMP_LEN - 2,
         seed + Math.floor(densityT * 11),
       );
       let rampIdx = Math.round(
-        waveRamp + (peak.rampIdx - waveRamp) * settleEased,
+        waveRamp + (peakRampIdx - waveRamp) * settleEased,
       );
 
-      const crossfadeStart = BLOOM_END - 300;
-      if (elapsed > crossfadeStart) {
-        const t = (elapsed - crossfadeStart) / 300;
+      if (elapsed > CROSSFADE_START) {
+        const t = (elapsed - CROSSFADE_START) / 300;
         const cfEased = t * t * t * (t * (6 * t - 15) + 10);
         rampIdx = Math.round(
-          rampIdx + (peak.rampIdx - rampIdx) * cfEased,
+          rampIdx + (peakRampIdx - rampIdx) * cfEased,
         );
-        alpha = alpha + (peak.alpha - alpha) * cfEased;
+        alpha = alpha + (peakAlpha - alpha) * cfEased;
       }
 
-      return {
-        rampIdx: Math.min(RAMP_LEN - 2, Math.max(0, rampIdx)),
-        alpha: Math.max(0, Math.min(PEAK_ALPHA + 0.04, alpha)),
-      };
+      this._result.rampIdx = Math.min(RAMP_LEN - 2, Math.max(0, rampIdx));
+      this._result.alpha = Math.max(0, Math.min(PEAK_ALPHA + 0.04, alpha));
+      return this._result;
     }
 
     // --- Phase 3: Peak (1800-2600ms) ---
@@ -211,11 +225,11 @@ export class IntroEngine {
     }
 
     // --- Phase 4: Dissolve (2600-4000ms) ---
-    const dissolveT = (elapsed - PEAK_END) / (INTRO_DURATION - PEAK_END);
+    const dissolveT = (elapsed - PEAK_END) / DISSOLVE_SPAN;
     const globalEased = 1 - Math.pow(1 - dissolveT, 2);
 
-    const hash = cellHash(col, row);
-    const hash2 = cellHash2(col, row);
+    const hash = this.hashes1[idx];
+    const hash2 = this.hashes2[idx];
     const distContrib = (1 - Math.min(1, dist / 0.9)) * 0.45;
     const noiseContrib = hash * 0.12 + hash2 * 0.08;
     const cellDissolveT = Math.max(
@@ -224,7 +238,7 @@ export class IntroEngine {
     );
 
     const syntheticBirth =
-      DORMANT_END + dist * (BLOOM_END - DORMANT_END);
+      DORMANT_END + dist * BLOOM_SPAN;
     const peakAge = PEAK_END - syntheticBirth;
     const peakRamp = Math.min(RAMP_LEN - 2, ageToRamp(peakAge, speed));
     const cappedPeak = Math.min(
@@ -243,6 +257,8 @@ export class IntroEngine {
 
     const alpha = PEAK_ALPHA + (0.18 - PEAK_ALPHA) * smoothT;
 
-    return { rampIdx: Math.min(RAMP_LEN - 2, rampIdx), alpha };
+    this._result.rampIdx = Math.min(RAMP_LEN - 2, rampIdx);
+    this._result.alpha = alpha;
+    return this._result;
   }
 }

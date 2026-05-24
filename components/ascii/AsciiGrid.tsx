@@ -15,6 +15,11 @@ const LIGHT_BIAS = [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4];
 const HALO_RADIUS = 140;
 const HALO_BOOST = 4;
 
+const FILL_STYLES: string[] = [];
+for (let i = 0; i <= 100; i++) {
+  FILL_STYLES[i] = `rgba(200, 198, 194, ${(i / 100).toFixed(3)})`;
+}
+
 function getReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -33,6 +38,8 @@ interface GridState {
   mountTime: number;
   introEngine: IntroEngine | null;
   introSeeded: boolean;
+  vh: number;
+  needsCtxReset: boolean;
 }
 
 export function AsciiGrid() {
@@ -85,6 +92,8 @@ export function AsciiGrid() {
       mountTime: prev?.mountTime ?? performance.now(),
       introEngine: prev?.introEngine ?? new IntroEngine(cols, rows, centerCol, centerRow, charW, charH),
       introSeeded: prev?.introSeeded ?? false,
+      vh: h,
+      needsCtxReset: true,
     };
   }, []);
 
@@ -106,18 +115,21 @@ export function AsciiGrid() {
       const state = stateRef.current;
       if (!state) return;
 
-      const { cols, rows, buffer, mouseX, mouseY, mouseActive, introEngine } = state;
+      const { cols, rows, buffer, mouseX, mouseY, mouseActive, introEngine, vh } = state;
       const charW = FONT_SIZE * 0.6;
       const charH = FONT_SIZE * LINE_HEIGHT;
       const scroll = getSnapshot();
-      const vh = window.innerHeight || 1;
       const elapsed = now - mountTime;
       const introActive = elapsed < INTRO_DURATION && !reduced && introEngine;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-      ctx.font = fontStr;
-      ctx.textBaseline = "top";
+
+      if (state.needsCtxReset) {
+        ctx.font = fontStr;
+        ctx.textBaseline = "top";
+        state.needsCtxReset = false;
+      }
 
       if (!introActive && introEngine && !state.introSeeded) {
         for (let r = 0; r < rows; r++) {
@@ -127,6 +139,18 @@ export function AsciiGrid() {
           }
         }
         state.introSeeded = true;
+      }
+
+      let haloColMin = 0, haloColMax = -1, haloRowMin = 0, haloRowMax = -1;
+      if (mouseActive) {
+        const haloColR = Math.ceil(HALO_RADIUS / charW);
+        const haloRowR = Math.ceil(HALO_RADIUS / charH);
+        const mc = Math.floor(mouseX / charW);
+        const mr = Math.floor(mouseY / charH);
+        haloColMin = Math.max(0, mc - haloColR);
+        haloColMax = Math.min(cols - 1, mc + haloColR);
+        haloRowMin = Math.max(0, mr - haloRowR);
+        haloRowMax = Math.min(rows - 1, mr + haloRowR);
       }
 
       for (let r = 0; r < rows; r++) {
@@ -192,7 +216,7 @@ export function AsciiGrid() {
           }
 
           // Mouse proximity: local ramp shift (Aino-style)
-          if (mouseActive) {
+          if (mouseActive && r >= haloRowMin && r <= haloRowMax && c >= haloColMin && c <= haloColMax) {
             const mdx = x + charW / 2 - mouseX;
             const mdy = y + charH / 2 - mouseY;
             const d = Math.sqrt(mdx * mdx + mdy * mdy);
@@ -208,7 +232,7 @@ export function AsciiGrid() {
           alpha = Math.min(1, Math.max(0, alpha));
           if (alpha < 0.01) continue;
 
-          ctx.fillStyle = `rgba(200, 198, 194, ${alpha.toFixed(3)})`;
+          ctx.fillStyle = FILL_STYLES[Math.round(alpha * 100)];
           ctx.fillText(RAMP[drawIdx], x, y);
         }
       }
@@ -216,10 +240,7 @@ export function AsciiGrid() {
 
     const loop = (now: number) => {
       const state = stateRef.current;
-      if (!state || state.paused) {
-        state!.raf = requestAnimationFrame(loop);
-        return;
-      }
+      if (!state || state.paused) return;
       draw(now);
       state.raf = requestAnimationFrame(loop);
     };
@@ -253,10 +274,22 @@ export function AsciiGrid() {
     };
 
     const onVisibility = () => {
-      if (stateRef.current) stateRef.current.paused = document.hidden;
+      if (stateRef.current) {
+        stateRef.current.paused = document.hidden;
+        if (!document.hidden) {
+          stateRef.current.raf = requestAnimationFrame(loop);
+        }
+      }
     };
 
-    const onResize = () => resize();
+    let resizeTimer: number | undefined;
+    const onResize = () => {
+      if (resizeTimer !== undefined) clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        resize();
+        resizeTimer = undefined;
+      }, 150);
+    };
 
     window.addEventListener("mousemove", onMove);
     window.addEventListener("touchmove", onTouch, { passive: true });
@@ -289,6 +322,7 @@ export function AsciiGrid() {
         cancelAnimationFrame(state.raf);
         if (state.churnTimer) clearInterval(state.churnTimer);
       }
+      if (resizeTimer !== undefined) clearTimeout(resizeTimer);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("touchmove", onTouch);
       window.removeEventListener("touchend", onTouchEnd);
