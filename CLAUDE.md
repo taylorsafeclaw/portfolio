@@ -4,15 +4,26 @@
 
 This file gives Claude Code persistent context for working on this codebase. Keep it tight; long files dilute attention.
 
-## Always use the frontend-design skill
+## Design skills (invoke before any visual work)
 
-Any time you touch UI, components, layout, styling, or anything user-visible in this repo, invoke the `frontend-design` skill first. No exceptions, even for "small" tweaks. It governs how visual decisions get made here.
+Any time you touch UI, components, layout, styling, or anything user-visible in this repo, invoke relevant design skills first. No exceptions, even for "small" tweaks.
+
+- **`frontend-design`** — primary skill for all visual decisions
+- **`design-taste-frontend`** (taste-skill) — anti-slop guardrails, 3-dial system (DESIGN_VARIANCE, MOTION_INTENSITY, VISUAL_DENSITY)
+- **`minimalist-ui`** (taste-skill) — editorial minimalism enforcement
+- **`full-output-enforcement`** (taste-skill) — ensures complete deliverables, no placeholders
+
+**Reference designs** (in `docs/design-references/`): ollama, resend, cursor, linear, xai, warp — dark/monospace brand references for inspiration. Read when making aesthetic decisions about spacing, density, or component patterns.
+
+**Override rule:** Our design system (HANDOFF.md) takes precedence over any generic skill guidance. Skills provide guardrails; HANDOFF.md provides the spec. When a skill suggests Inter, serifs, light mode, accent colors, or bento grids — ignore it. Our rules are stricter.
 
 ## What this project is
 
-A single-page personal site for Taylor Allen — repeat founder, builder, currently working in AI. Stack: Next.js 15 (App Router) + TypeScript + Tailwind CSS + shadcn/ui. Self-hosted on Vercel. Dark-mode-only, monochrome, all-monospace, with an ASCII-based visual identity.
+A single-page personal site for Taylor Allen — repeat founder, builder, currently working in AI. Stack: Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui. Self-hosted on Vercel. Dark-mode-only, monochrome, all-monospace, with an ASCII-based visual identity.
 
 The full design + implementation spec lives in `HANDOFF.md` — read it before making any design/UX decisions.
+
+**Current direction (May 2026):** Ship minimal. The hero animation is built and production-grade. Remaining work: Selected Work section, footer polish, 404 page, mobile pass, performance optimization (bundle is 171KB gz vs. 100KB ceiling), deploy. The Spotify/NowPlaying and bio footnotes direction in `plan.md` is **deprecated** — too much scope for v1. Ship what's built with enhancements, iterate post-launch.
 
 ## Commands
 
@@ -31,22 +42,26 @@ Always run `pnpm typecheck && pnpm lint` before finishing a task. Do not commit 
 - **Tailwind CSS v4.** No `tailwind.config.ts` — config lives in CSS via the `@theme` directive in `app/globals.css`. Design tokens are defined in `:root` and exposed to Tailwind via `@theme inline { --color-fg: var(--fg); ... }`. Use OKLCH not HSL for color values. Use `tw-animate-css` instead of the deprecated `tailwindcss-animate`.
 - **shadcn/ui.** Components live in `components/ui/`. They're copy-pasted, not installed — when adding a new one, use `pnpm dlx shadcn@latest add [component]` and then *re-skin it to match the design system* (Monaspace, monochrome, no rounded-md defaults, no ring colors). Never use shadcn defaults as-is.
 - **Animation.** Motion (`motion/react`), not framer-motion. Always wrap motion components in `'use client'`.
+- **CSS animation gotcha.** Lightning CSS (Turbopack) silently strips `animation` properties from `@layer components` rules when the keyframe start/end values match the element's own CSS (e.g., `opacity: 0` element with keyframes that start and end at `opacity: 0`). The compiler wrongly treats it as a no-op. **Workaround:** apply such animations via inline `style` in JSX, not CSS classes. Always verify CSS animations reach the browser via DevTools computed styles.
+- **ASCII grid is hero-only.** The `AsciiGrid` canvas lives inside the hero's sticky div, not in `layout.tsx`. It must not leak into the Selected Work or footer sections.
 - **Fonts.** Monaspace family, self-hosted via `next/font/local`. Two faces: Neon (default) and Xenon (slab serif, section headers only). No other typefaces, ever.
 
 ## Project structure
 
 ```
 app/
-  layout.tsx          # Fonts, substrate, root metadata
+  layout.tsx          # Fonts, root metadata
   page.tsx            # Single-page site
   not-found.tsx       # 404
   globals.css         # Design tokens, @theme directive, base styles
 components/
   ui/                 # shadcn primitives (re-skinned)
+  ascii/              # AsciiGrid canvas (hero-only background)
   hero/               # Hero section + ASCII wordmark + animation
   work/               # Selected work table
   footer/
 lib/
+  ascii/              # ASCII ramp + intro engine
   utils.ts            # cn() helper
 public/
   fonts/              # Monaspace woff2 files

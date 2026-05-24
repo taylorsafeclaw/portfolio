@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Substrate } from "@/components/substrate/Substrate";
+
 
 const monaspaceNeon = localFont({
   src: [
@@ -23,7 +23,7 @@ const monaspaceXenon = localFont({
 export const metadata: Metadata = {
   title: "Taylor Allen",
   description:
-    "Builder from the Bay. Repeat founder. Shipped a startup, gone deep on enterprise systems, now back to building.",
+    "Builder from the Bay. Repeat founder. Shipped startups from 0 → 1, gone deep on enterprise systems, now back to building.",
 };
 
 export default function RootLayout({
@@ -34,8 +34,16 @@ export default function RootLayout({
       lang="en"
       className={`${monaspaceNeon.variable} ${monaspaceXenon.variable}`}
     >
+      {/* prettier-ignore */}
+      {/*
+        ████████  █████  ██    ██ ██       ██████  ██████
+           ██    ██   ██  ██  ██  ██      ██    ██ ██   ██
+           ██    ███████   ████   ██      ██    ██ ██████
+           ██    ██   ██    ██    ██      ██    ██ ██   ██
+           ██    ██   ██    ██    ██████   ██████  ██   ██
+        you found the source. hi. — taylor
+      */}
       <body className="min-h-screen antialiased">
-        <Substrate />
         {children}
       </body>
     </html>
