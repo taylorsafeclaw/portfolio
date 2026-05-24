@@ -79,7 +79,7 @@ export function TextGenerate({ segments, className = "" }: Props) {
             {i > 0 && " "}
             <span
               style={{
-                opacity: visible ? 1 : 0,
+                opacity: visible || flashing ? 1 : 0,
                 transition: "opacity 100ms ease",
               }}
               className={entry.emphasis ? "font-medium text-[var(--fg-peak)]" : ""}
