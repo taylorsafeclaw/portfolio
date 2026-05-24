@@ -1,23 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { getSnapshot as getScrollSnapshot } from "@/lib/scroll-store";
 
-const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
-
-function subscribeReducedMotion(cb: () => void) {
-  const mq = window.matchMedia(REDUCED_QUERY);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-function getReducedMotion() {
-  return window.matchMedia(REDUCED_QUERY).matches;
-}
-function getServerReducedMotion() {
-  return false;
-}
-
-const RAMP = ["·", "░", "▒", "▓", "█"] as const;
-type Ramp = (typeof RAMP)[number];
+const WORDMARK_RAMP = ["·", "░", "▒", "▓", "█"] as const;
+type Ramp = (typeof WORDMARK_RAMP)[number];
 
 const LETTERS: Record<string, string[]> = {
   T: ["█████", "  █  ", "  █  ", "  █  ", "  █  ", "  █  "],
@@ -32,8 +20,7 @@ const WORD = "TAYLOR";
 
 function buildWordRows(): string[] {
   const rows: string[] = [];
-  const height = 6;
-  for (let r = 0; r < height; r++) {
+  for (let r = 0; r < 6; r++) {
     let line = "";
     WORD.split("").forEach((ch, i) => {
       line += LETTERS[ch][r];
@@ -46,65 +33,96 @@ function buildWordRows(): string[] {
 
 const RESOLVED_ROWS = buildWordRows();
 
-// Animation timing
-const APPEAR_START = 250;
-const APPEAR_DURATION = 1100; // cells fade in as ░
-const SET_START = APPEAR_START + APPEAR_DURATION + 120; // start ink-set
-const SET_DURATION = 1100; // ░ → █ ramp climb
+const APPEAR_START = 2800;
+const APPEAR_DURATION = 1000;
+const SET_START = APPEAR_START + APPEAR_DURATION + 100;
+const SET_DURATION = 900;
 const RESOLVE_DONE = SET_START + SET_DURATION;
 
-// Density wave: a diagonal pulse travels through the wordmark, briefly
-// down-stepping cells on the ramp (█ → ▓ → ▒) as it passes — like a sheen
-// of light moving across inked type. Native to the ASCII medium.
-const WAVE_INITIAL_DELAY = 5000; // first wave fires 5s after resolve
-const WAVE_INTERVAL = 5200; // gap between waves (slightly off-grid)
-const WAVE_DURATION = 1700; // travel time across the word
-const WAVE_BAND = 5; // horizontal influence radius (in cells)
-const WAVE_SKEW = 0.7; // diagonal slope (0 = vertical wave; 1 = ~45°)
+const WAVE_INITIAL_DELAY = 2500;
+const WAVE_INTERVAL = 5200;
+const WAVE_DURATION = 1700;
+const WAVE_BAND = 5;
+const WAVE_SKEW = 0.7;
 
 type Cell = {
   ch: Ramp | " ";
   isFilled: boolean;
-  // 0..1 progression for current phase (used to drive ramp character)
   progress: number;
-  // for shimmer: a transient offset that decays back to 0
   flicker: number;
 };
 
 function rampForProgress(p: number): Ramp {
-  // Map [0..1] across the ramp without the leading dot — once visible, climb ░→█
-  // p=0 → ░, p=1 → █
-  const idx = Math.min(RAMP.length - 1, 1 + Math.floor(p * (RAMP.length - 1)));
-  return RAMP[idx];
+  const idx = Math.min(WORDMARK_RAMP.length - 1, 1 + Math.floor(p * (WORDMARK_RAMP.length - 1)));
+  return WORDMARK_RAMP[idx];
 }
+
+function computeCenter(
+  filled: Array<[number, number]>,
+): [number, number] {
+  let minR = Infinity,
+    maxR = -Infinity,
+    minC = Infinity,
+    maxC = -Infinity;
+  for (const [r, c] of filled) {
+    if (r < minR) minR = r;
+    if (r > maxR) maxR = r;
+    if (c < minC) minC = c;
+    if (c > maxC) maxC = c;
+  }
+  return [(minR + maxR) / 2, (minC + maxC) / 2];
+}
+
+function pseudoRandom(a: number, b: number): number {
+  const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// Pre-computed per-cell dissolve thresholds: edges spark out first, center holds longest
+const DISSOLVE_THRESHOLDS: Map<string, number> = (() => {
+  const filled: Array<[number, number]> = [];
+  RESOLVED_ROWS.forEach((row, r) =>
+    row.split("").forEach((c, col) => {
+      if (c !== " ") filled.push([r, col]);
+    }),
+  );
+  const [cr, cc] = computeCenter(filled);
+  let maxDist = 0;
+  for (const [r, c] of filled) {
+    const d = Math.sqrt((r - cr) ** 2 + ((c - cc) * 0.25) ** 2);
+    if (d > maxDist) maxDist = d;
+  }
+  const m = new Map<string, number>();
+  for (const [r, c] of filled) {
+    const d = Math.sqrt((r - cr) ** 2 + ((c - cc) * 0.25) ** 2);
+    const norm = d / Math.max(1, maxDist);
+    const base = 0.04 + (1 - norm) * 0.65;
+    const jitter = (pseudoRandom(r, c) - 0.5) * 0.22;
+    m.set(`${r},${c}`, Math.max(0.04, Math.min(0.80, base + jitter)));
+  }
+  return m;
+})();
 
 export function Wordmark() {
   const [grid, setGrid] = useState<Cell[][]>(() =>
     RESOLVED_ROWS.map((row) =>
       row.split("").map((c) => ({
-        ch: " ",
+        ch: " " as Ramp | " ",
         isFilled: c !== " ",
         progress: 0,
         flicker: 0,
       })),
     ),
   );
-  // 0..1 swell that brightens textShadow during the wave pulse
   const [glow, setGlow] = useState(0);
 
-  const reduced = useSyncExternalStore(
-    subscribeReducedMotion,
-    getReducedMotion,
-    getServerReducedMotion,
-  );
-
+  const reduced = useReducedMotion();
   const rafRef = useRef<number | null>(null);
   const tabHidden = useRef(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const preRef = useRef<HTMLPreElement | null>(null);
 
   useEffect(() => {
-    // Build flat list of filled positions
     const filled: Array<[number, number]> = [];
     RESOLVED_ROWS.forEach((row, r) =>
       row.split("").forEach((c, col) => {
@@ -117,7 +135,7 @@ export function Wordmark() {
         setGrid(
           RESOLVED_ROWS.map((row) =>
             row.split("").map((c) => ({
-              ch: c === " " ? " " : "█",
+              ch: (c === " " ? " " : "█") as Ramp | " ",
               isFilled: c !== " ",
               progress: 1,
               flicker: 0,
@@ -128,22 +146,27 @@ export function Wordmark() {
       return () => cancelAnimationFrame(id);
     }
 
-    // Per-cell randomized appear delay (within APPEAR_DURATION)
-    // and per-cell randomized ink-set delay (within SET_DURATION)
+    // Crystal growth: Manhattan distance from center
+    const [centerR, centerC] = computeCenter(filled);
+    const distances = new Map<string, number>();
+    let maxDist = 0;
+    for (const [r, c] of filled) {
+      const d = Math.abs(r - centerR) + Math.abs(c - centerC);
+      distances.set(`${r},${c}`, d);
+      if (d > maxDist) maxDist = d;
+    }
+
     const appearDelays = new Map<string, number>();
     const setDelays = new Map<string, number>();
-    const shuffledA = [...filled].sort(() => Math.random() - 0.5);
-    const shuffledB = [...filled].sort(() => Math.random() - 0.5);
     const appearWindow = APPEAR_DURATION * 0.7;
     const setWindow = SET_DURATION * 0.65;
-    shuffledA.forEach(([r, c], i) => {
-      const t = (i / Math.max(1, shuffledA.length - 1)) * appearWindow;
-      appearDelays.set(`${r},${c}`, t);
-    });
-    shuffledB.forEach(([r, c], i) => {
-      const t = (i / Math.max(1, shuffledB.length - 1)) * setWindow;
-      setDelays.set(`${r},${c}`, t);
-    });
+
+    for (const [r, c] of filled) {
+      const key = `${r},${c}`;
+      const normDist = (distances.get(key) ?? 0) / Math.max(1, maxDist);
+      appearDelays.set(key, normDist * appearWindow);
+      setDelays.set(key, normDist * setWindow);
+    }
 
     const onVisibility = () => {
       tabHidden.current = document.hidden;
@@ -154,58 +177,55 @@ export function Wordmark() {
     let raf = 0;
     const totalCols = RESOLVED_ROWS[0].length;
     const totalRows = RESOLVED_ROWS.length;
-    // Distance the wave head must travel: full width + diagonal skew + band
     const waveSpan = totalCols + totalRows * WAVE_SKEW + WAVE_BAND * 2;
 
     const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
 
     const tick = (now: number) => {
       const elapsed = now - start;
+      const dp = getScrollSnapshot().heroDissolve;
 
       setGrid((prev) => {
         const next = prev.map((row) => row.slice());
 
-        // 1) appear phase: fade in cells as ░ from blank
-        // 2) set phase: climb ramp ░ → █
-        // 3) shimmer phase: occasional flicker downward (lighter) and recover
         for (let r = 0; r < next.length; r++) {
           for (let c = 0; c < next[r].length; c++) {
             const cell = next[r][c];
             if (!cell.isFilled) continue;
             const key = `${r},${c}`;
 
+            if (elapsed < APPEAR_START) {
+              next[r][c] = { ch: " ", isFilled: true, progress: 0, flicker: 0 };
+              continue;
+            }
+
             const aDelay = appearDelays.get(key) ?? 0;
             const aLocal = elapsed - APPEAR_START - aDelay;
-            const aProgress = Math.max(0, Math.min(1, aLocal / 260));
+            const aProgress = Math.max(0, Math.min(1, aLocal / 300));
 
             const sDelay = setDelays.get(key) ?? 0;
             const sLocal = elapsed - SET_START - sDelay;
-            const sProgress = Math.max(0, Math.min(1, sLocal / 420));
+            const sProgress = Math.max(0, Math.min(1, sLocal / 480));
 
-            // Compute wave influence at this cell's position
-            // Wave fires every WAVE_INTERVAL after RESOLVE_DONE + WAVE_INITIAL_DELAY
+            // Wave influence (suppress during dissolve)
             let waveBoost = 0;
-            const sinceFirstWave = elapsed - RESOLVE_DONE - WAVE_INITIAL_DELAY;
-            if (sinceFirstWave >= 0 && !tabHidden.current) {
+            const sinceFirstWave =
+              elapsed - RESOLVE_DONE - WAVE_INITIAL_DELAY;
+            if (sinceFirstWave >= 0 && !tabHidden.current && dp < 0.1) {
               const cyclePos = sinceFirstWave % WAVE_INTERVAL;
               if (cyclePos < WAVE_DURATION) {
-                const t = cyclePos / WAVE_DURATION; // 0..1 across travel
-                // Smoothstep ease so the head accelerates and decelerates
+                const t = cyclePos / WAVE_DURATION;
                 const ease = t * t * (3 - 2 * t);
                 const headX = -WAVE_BAND + ease * waveSpan;
-                // Diagonal: lower rows trail behind upper rows slightly
                 const wavePos = headX - r * WAVE_SKEW;
                 const dist = Math.abs(c - wavePos);
                 if (dist < WAVE_BAND) {
-                  // Bell-shaped intensity across the band
                   const u = 1 - dist / WAVE_BAND;
                   waveBoost = u * u * (3 - 2 * u) * 0.85;
                 }
               }
             }
 
-            // Flicker = max(decaying previous, current wave boost)
-            // Wave drives the value when present; otherwise it decays smoothly
             const decayed = Math.max(0, cell.flicker - 0.06);
             const flicker = Math.max(decayed, waveBoost);
 
@@ -216,16 +236,30 @@ export function Wordmark() {
               ch = " ";
               progress = 0;
             } else if (sProgress <= 0) {
-              // Just appeared as ░; tiny micro-jitter between · and ░ at low opacity feel
-              const jitter = Math.random();
+              const jitter = pseudoRandom(r * 31 + c, Math.floor(elapsed / 80));
               ch = jitter < 0.85 ? "░" : "·";
               progress = 0;
             } else {
               progress = easeOutCubic(sProgress);
-              // Wave bumps cells DOWN the ramp (█ → ▓ → ▒) — reads as a
-              // pulse of light moving across inked type.
               const eff = Math.max(0, progress - flicker * 0.75);
               ch = rampForProgress(eff);
+            }
+
+            // Dissolve: reverse crystal growth — cells erode from edges inward
+            if (dp > 0.02 && elapsed > RESOLVE_DONE) {
+              const threshold = DISSOLVE_THRESHOLDS.get(key) ?? 0.5;
+
+              const local = dp - threshold;
+              if (local >= 0.04) {
+                ch = " ";
+                progress = 0;
+              } else if (local >= 0.02) {
+                ch = "·";
+                progress = 0.05;
+              } else if (local >= 0) {
+                ch = "░";
+                progress = 0.2;
+              }
             }
 
             next[r][c] = { ch, isFilled: true, progress, flicker };
@@ -235,19 +269,24 @@ export function Wordmark() {
         return next;
       });
 
-      // Synchronized glow swell: textShadow brightens on the wave's leading
-      // edge, dims as it trails. Computed once per frame from wave timing.
+      // Glow swell (suppress during dissolve)
       const sinceFirstWave = elapsed - RESOLVE_DONE - WAVE_INITIAL_DELAY;
       let nextGlow = 0;
-      if (sinceFirstWave >= 0) {
+      if (sinceFirstWave >= 0 && dp < 0.1) {
         const cyclePos = sinceFirstWave % WAVE_INTERVAL;
         if (cyclePos < WAVE_DURATION) {
           const t = cyclePos / WAVE_DURATION;
-          // sin curve: 0 → 1 → 0 across the wave
           nextGlow = Math.sin(t * Math.PI);
         }
       }
-      setGlow(nextGlow);
+
+      // Resolve flash — one-shot glow spike when wordmark finishes setting
+      const resolveFlash =
+        elapsed > RESOLVE_DONE && elapsed < RESOLVE_DONE + 700
+          ? Math.max(0, 1 - (elapsed - RESOLVE_DONE) / 700) * 0.8
+          : 0;
+
+      setGlow(nextGlow + resolveFlash);
 
       raf = requestAnimationFrame(tick);
       rafRef.current = raf;
@@ -285,10 +324,9 @@ export function Wordmark() {
         el.style.setProperty("--m-opacity", "0");
       }}
     >
-      {/* Dimensional echo — offset, very faint, gives the mark printed weight */}
       <pre
         aria-hidden
-        className="pointer-events-none absolute inset-0 m-0 select-none whitespace-pre text-center text-[var(--fg-quietest)] leading-[1.05] text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
+        className="pointer-events-none absolute inset-0 m-0 select-none whitespace-pre text-center text-[var(--fg-quietest)] leading-[1.05] text-[9px] min-[420px]:text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
         style={{
           fontFamily: "var(--font-mono), ui-monospace, monospace",
           transform: "translate(2px, 2px)",
@@ -300,7 +338,7 @@ export function Wordmark() {
       <pre
         ref={preRef}
         aria-label="Taylor"
-        className="relative m-0 select-none whitespace-pre text-center text-[var(--fg-peak)] leading-[1.05] text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
+        className="relative m-0 select-none whitespace-pre text-center text-[var(--fg-peak)] leading-[1.05] text-[9px] min-[420px]:text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
         style={{
           fontFamily: "var(--font-mono), ui-monospace, monospace",
           textShadow: [
@@ -314,10 +352,9 @@ export function Wordmark() {
       >
         {text}
       </pre>
-      {/* Bright cursor spotlight on the letters — masked overlay */}
       <pre
         aria-hidden
-        className="pointer-events-none absolute inset-0 m-0 select-none whitespace-pre text-center leading-[1.05] text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
+        className="pointer-events-none absolute inset-0 m-0 select-none whitespace-pre text-center leading-[1.05] text-[9px] min-[420px]:text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
         style={{
           fontFamily: "var(--font-mono), ui-monospace, monospace",
           color: "#ffffff",
