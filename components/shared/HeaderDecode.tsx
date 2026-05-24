@@ -28,19 +28,25 @@ export function HeaderDecode({ text, className = "", as: Tag = "h2" }: Props) {
     hasDecoded.current = true;
 
     const start = performance.now();
+    let id: ReturnType<typeof setTimeout>;
+
     const tick = () => {
       const t = Math.min(1, (performance.now() - start) / DECODE_MS);
       setDisplay(scrambleText(text, t, DENSITY_CHARS));
       if (t < 1) {
-        setTimeout(tick, TICK_MS);
+        id = setTimeout(tick, TICK_MS);
       }
     };
     tick();
+
+    return () => clearTimeout(id);
   }, [inView, text, reduced]);
 
   return (
     <Tag
-      ref={ref as React.RefObject<HTMLHeadingElement & HTMLSpanElement & HTMLDivElement>}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref={ref as unknown as React.RefObject<any>}
+      aria-label={text}
       className={`font-[var(--font-display)] text-[13px] font-normal tracking-[0.04em] text-[var(--fg-strong)] lowercase ${className}`}
     >
       {display}
