@@ -18,9 +18,10 @@ export function sparkleBoost(
   totalCells: number,
   rate: number = 2.5,
 ): number {
+  if (totalCells <= 0) return 0;
   const cycle = 400;
   const slot = Math.floor(now / cycle);
-  const hash = ((slot * 7919 + cellIndex * 104729) % totalCells);
+  const hash = Math.abs((slot * 7919 + cellIndex * 104729) % totalCells);
   const isSparkle = hash < Math.ceil(rate);
   if (!isSparkle) return 0;
   const t = (now % cycle) / cycle;
