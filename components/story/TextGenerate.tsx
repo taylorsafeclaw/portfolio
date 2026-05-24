@@ -42,18 +42,30 @@ export function TextGenerate({ segments, className = "" }: Props) {
     }
 
     let current = 0;
+    let flashTimer: ReturnType<typeof setTimeout> | null = null;
+
     const reveal = () => {
       if (current >= totalWords) return;
-      setFlashIndex(current);
-      setTimeout(() => setFlashIndex(-1), RAMP_FLASH_MS);
+      const idx = current;
       current++;
-      setRevealedWords(current);
-      timerRef.current = setTimeout(reveal, WORD_DELAY_MS);
+
+      // Flash the ramp char first (word still hidden at idx)
+      setFlashIndex(idx);
+
+      flashTimer = setTimeout(() => {
+        // Now reveal the word and clear flash
+        setRevealedWords(idx + 1);
+        setFlashIndex(-1);
+        // Schedule next word after reveal
+        timerRef.current = setTimeout(reveal, WORD_DELAY_MS);
+      }, RAMP_FLASH_MS);
     };
+
     timerRef.current = setTimeout(reveal, 200);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (flashTimer) clearTimeout(flashTimer);
     };
   }, [inView, totalWords, reduced]);
 
