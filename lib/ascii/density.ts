@@ -51,8 +51,8 @@ export function erosionAlpha(
     let dist: number;
     switch (zone.shape) {
       case "center-out": {
-        const dx = (cellX - zone.centerX) / viewportW;
-        const dy = (cellY - zone.centerY) / viewportH;
+        const dx = viewportW > 0 ? (cellX - zone.centerX) / viewportW : 0;
+        const dy = viewportH > 0 ? (cellY - zone.centerY) / viewportH : 0;
         dist = Math.sqrt(dx * dx + dy * dy) * 2;
         break;
       }
@@ -61,6 +61,7 @@ export function erosionAlpha(
         break;
       }
       case "edges-in": {
+        if (viewportW <= 0 || viewportH <= 0) { dist = 0; break; }
         const edgeDist = Math.min(
           cellX / viewportW,
           (viewportW - cellX) / viewportW,
