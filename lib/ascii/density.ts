@@ -1,7 +1,5 @@
 // lib/ascii/density.ts
 
-import { RAMP, RAMP_LEN } from "@/lib/ascii/ramp";
-
 /** Sinusoidal breathing: returns an opacity delta for a cell at time `now` */
 export function breathingAlpha(
   col: number,
