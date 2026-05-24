@@ -15,8 +15,8 @@ export function breathingAlpha(
 export function sparkleBoost(
   cellIndex: number,
   now: number,
-  rate: number = 2.5,
   totalCells: number,
+  rate: number = 2.5,
 ): number {
   const cycle = 400;
   const slot = Math.floor(now / cycle);
@@ -56,7 +56,7 @@ export function erosionAlpha(
         break;
       }
       case "top-down": {
-        dist = (cellY - zone.centerY + zone.radius) / (zone.radius * 2);
+        dist = (cellY - zone.centerY + zone.radius) / Math.max(0.01, zone.radius * 2);
         break;
       }
       case "edges-in": {
@@ -66,15 +66,15 @@ export function erosionAlpha(
           cellY / viewportH,
           (viewportH - cellY) / viewportH,
         ) * 4;
-        dist = 1 - edgeDist;
+        dist = edgeDist;
         break;
       }
       case "bottom-up": {
-        dist = 1 - (cellY - zone.centerY + zone.radius) / (zone.radius * 2);
+        dist = 1 - (cellY - zone.centerY + zone.radius) / Math.max(0.01, zone.radius * 2);
         break;
       }
     }
-    const erosion = Math.max(0, 1 - Math.max(0, dist) / Math.max(0.01, 1 - zone.progress));
+    const erosion = Math.max(0, 1 - Math.max(0, dist) / Math.max(0.01, zone.progress));
     alpha *= 1 - erosion;
   }
   return Math.max(0, Math.min(1, alpha));
