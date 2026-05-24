@@ -26,14 +26,21 @@ export function BorderBeam({ className = "" }: Props) {
     let raf: number;
     const start = performance.now();
 
+    let w = container.offsetWidth;
+    const ro = new ResizeObserver(() => { w = container.offsetWidth; });
+    ro.observe(container);
+
     const tick = () => {
       const t = ((performance.now() - start) % LOOP_MS) / LOOP_MS;
-      const w = container.offsetWidth;
       char.style.transform = `translateX(${t * w}px)`;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [reduced]);
 
   return (
