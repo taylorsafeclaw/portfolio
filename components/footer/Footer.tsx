@@ -1,43 +1,48 @@
 "use client";
 
 import { ScrambleLink } from "@/components/hero/ScrambleLink";
+import { TextGenerate } from "@/components/story/TextGenerate";
+import { useMagnetic } from "@/lib/hooks/useMagnetic";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
-const SEPARATOR = "·";
-
-const PARTS = [
-  { kind: "text" as const, value: "Taylor Allen" },
-  { kind: "text" as const, value: "2026" },
-  { kind: "text" as const, value: "Bay Area" },
-  {
-    kind: "link" as const,
-    value: "taylor@taylorallen.dev",
-    href: "mailto:taylor@taylorallen.dev",
-  },
-];
+const TAGLINE_SEGMENTS = [{ text: "Let's build something." }];
 
 export function Footer() {
+  const { ref: magneticRef, offset } = useMagnetic(200, 4);
+  const reduced = useReducedMotion();
+
   return (
-    <footer className="relative z-10 px-6 pt-10 pb-6 font-mono text-[11px] leading-none text-[var(--fg-quiet)] sm:px-10 sm:pt-16 sm:pb-8">
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-2">
-        {PARTS.map((part, i) => (
-          <span key={i} className="flex items-center gap-x-2">
-            {i > 0 && (
-              <span aria-hidden className="text-[var(--fg-quietest)]">
-                {SEPARATOR}
-              </span>
-            )}
-            {part.kind === "link" ? (
-              <ScrambleLink
-                href={part.href}
-                className="transition-colors hover:text-[var(--fg-strong)] focus-visible:text-[var(--fg-strong)]"
-              >
-                {part.value}
-              </ScrambleLink>
-            ) : (
-              <span>{part.value}</span>
-            )}
-          </span>
-        ))}
+    <footer className="relative z-10 mx-auto w-full max-w-[52ch] px-6 pt-16 pb-8 text-center sm:px-10 sm:pt-24 sm:pb-10">
+      <TextGenerate
+        segments={TAGLINE_SEGMENTS}
+        className="mb-6 font-mono text-[14px] text-[var(--fg)] sm:text-[15px]"
+      />
+
+      <div className="mb-8">
+        {/* Magnetic wrapper — ScrambleLink does not forward refs */}
+        <span
+          ref={magneticRef as React.RefObject<HTMLSpanElement>}
+          style={{
+            display: "inline-block",
+            transform: reduced ? undefined : `translate(${offset.x}px, ${offset.y}px)`,
+            transition: "transform 150ms ease",
+          }}
+        >
+          <ScrambleLink
+            href="mailto:taylor@taylorallen.dev"
+            className="font-mono text-[14px] text-[var(--fg-peak)] sm:text-[15px]"
+          >
+            taylor@taylorallen.dev
+          </ScrambleLink>
+        </span>
+      </div>
+
+      <p className="font-mono text-[11px] text-[var(--fg-quiet)]">
+        <span>Taylor Allen</span>
+        <span className="mx-2 text-[var(--fg-quietest)]" aria-hidden>·</span>
+        <span>2026</span>
+        <span className="mx-2 text-[var(--fg-quietest)]" aria-hidden>·</span>
+        <span>Bay Area</span>
       </p>
     </footer>
   );
