@@ -1,95 +1,80 @@
-# TODOS — v1 minimal ship
+# TODOS — interactive resume
 
-Source of truth for remaining work. Defer to `HANDOFF.md` for design intent, tokens, fonts, and voice.
+Source of truth for remaining work. Full design spec lives in `docs/superpowers/specs/2026-05-24-interactive-resume-design.md`. Implementation plan with code in `docs/superpowers/plans/2026-05-24-interactive-resume.md`.
 
 Each phase ends with `pnpm typecheck && pnpm lint && pnpm build` clean.
 
 ---
 
-## Phase 1 — Selected Work section (3–4 hr)
+## Phase 1 — Shared primitives (DONE)
 
-- [ ] `components/work/SelectedWork.tsx` — section header + mono table per HANDOFF spec
-- [ ] `components/work/ProjectRow.tsx` — density char + title + description + year
-- [ ] Section header: `selected work` in Monaspace Xenon, 13px, lowercase, letter-spacing 0.04em
-- [ ] Hairline dividers between rows (`--border`)
-- [ ] Hover state: `--bg-elev-1` background, density char shifts up one step
-- [ ] Anchor `#selected-work` for hero CTA link
-- [ ] Responsive: stack gracefully on mobile
-- [ ] `prefers-reduced-motion`: hover transitions still work (they're CSS, not animation)
-- [ ] Real project content (confirm with Taylor — Poppin + Stanford Health + current build?)
+- [x] Task 1: `lib/ascii/density.ts` — breathing, sparkle, erosion math
+- [x] Task 2: `lib/hooks/useInView.ts` — IntersectionObserver hook for scroll-triggered effects
+- [x] Task 3: `components/shared/HeaderDecode.tsx` — viewport-triggered scramble decode for section headers
+- [x] Task 4: `components/story/TextGenerate.tsx` — word-by-word reveal with density ramp flash
+- [x] Task 5: `components/shared/BorderBeam.tsx` — density char walking section dividers
 
-## Phase 2 — Footer + 404 (1–2 hr)
+---
 
-- [ ] Polish footer to match HANDOFF spec exactly (11px, `--fg-quiet`, `·` separators in `--fg-quietest`)
-- [ ] `app/not-found.tsx` — centered, `404 — this page didn't ship` + back link
-- [ ] Verify footer wraps gracefully on mobile
+## Phase 2 — Content sections (pending)
 
-## Phase 3 — Mobile pass (2–3 hr)
+- [ ] Task 6: Story section (`components/story/Story.tsx`) — narrative "who I am", text generate, header decode
+- [ ] Task 7: Conviction section (`components/conviction/Conviction.tsx`) — 3 scroll-paced belief statements in Instrument Serif italic
+- [ ] Task 8: WorkCard + SelectedWork rewrite — focus cards with spotlight, moving border, focus dimming
+  - Create `components/work/WorkCard.tsx`
+  - Rewrite `components/work/SelectedWork.tsx`
+  - Update `lib/projects.ts` with real Odisai / Stanford / Poppin data
+  - Delete `components/work/ProjectRow.tsx`
+- [ ] Task 9: Footer rewrite (`components/footer/Footer.tsx`) — magnetic CTA, "Let's build something.", text generate tagline
+  - Create `lib/hooks/useMagnetic.ts`
 
-- [ ] Wordmark scales correctly at all breakpoints (9px → 14px → 18px → 22–26px)
-- [ ] Bio max-width: 90vw on mobile, 58ch on desktop
-- [ ] CTAs stack vertically on mobile with 16px gap
-- [ ] Selected Work table readable on small screens
-- [ ] AsciiField churn rate appropriate for mobile (battery preservation)
-- [ ] Test on iPhone SE viewport (375px)
+---
 
-## Phase 4 — Performance pass (3–4 hr)
+## Phase 3 — Site-wide ASCII field (pending)
 
-- [ ] Investigate bundle composition (171KB gz baseline — what's heavy?)
-- [ ] Paper Shaders `StaticMeshGradient` — benchmark on mobile, fallback to WebP if needed
-- [ ] `motion` — verify tree-shaking, consider dynamic import if large
-- [ ] Font preload: `<link rel="preload">` for Neon Regular/Medium + Xenon Regular
-- [ ] Lighthouse mobile: target 100/100/100/100
-- [ ] LCP < 1.0s, CLS = 0, INP < 200ms, TBT < 100ms
-- [ ] Total JS shipped < 100KB gz
+- [ ] Task 10: AsciiGrid site-wide refactor
+  - Move AsciiGrid from hero-scoped to `app/layout.tsx` (fixed, full-viewport)
+  - Add Instrument Serif font to layout (`next/font/google` or self-hosted)
+  - Tune breathing waves and sparkles (reduce ambient to ~10%)
+  - Remove `<AsciiGrid />` from `components/hero/Hero.tsx`
+- [ ] Task 11: Density erosion integration
+  - Create `components/shared/SectionWrapper.tsx` — registers erosion zones
+  - Wrap Story, SelectedWork, Conviction, Footer with SectionWrapper
+  - Connect erosion zones to AsciiGrid draw loop
 
-## Phase 5 — Deploy (1–2 hr)
+---
 
-- [ ] Vercel project linked
-- [ ] Domain attached + DNS verified
-- [ ] Env vars (if any) set on production
-- [ ] OG image: 1200×630 PNG of TAYLOR wordmark
-- [ ] `metadata.openGraph` + `metadata.twitter` in `app/layout.tsx`
-- [ ] `robots.txt` + `sitemap.xml` (Next 16 metadata file conventions)
-- [ ] Verify prod Lighthouse within 2 points of local
+## Phase 4 — Polish (pending)
+
+- [ ] Task 12: Mobile and responsive pass
+  - AsciiGrid: larger cell size, fewer sparkles, simpler erosion on mobile
+  - WorkCard: touch behavior (tap-to-focus, no spotlight, no moving border on touch)
+  - Verify all sections at 375px viewport
+- [ ] Task 13: Reduced motion audit
+  - Verify all 12 effects skip or simplify when `prefers-reduced-motion: reduce`
+  - Test with macOS Reduce Motion enabled
+- [ ] Task 14: Final cleanup
+  - Full build check: `pnpm typecheck && pnpm lint && pnpm build`
+  - Update `CLAUDE.md` to reference new spec
 
 ---
 
 ## Decisions still open
 
-- [ ] Domain confirmed (`taylorallen.dev`)
-- [ ] Real project content for Selected Work
-- [ ] Email address for mailto
+- [ ] Domain confirmed (`taylorallen.dev` assumed)
+- [ ] Final Story section copy
+- [ ] Final Conviction section copy (2 or 3 statements?)
+- [ ] Real email address for mailto
+- [ ] OG image design
 - [ ] Plausible analytics (yes/no)
 
 ---
 
 ## Out of scope for v1
 
-- Spotify NowPlaying (any variant)
-- Bio footnotes
-- AsciiCanvas primitive refactor
-- Sub-pages (`/now`, `/writing`, etc.)
-- Touch halo on wordmark
-- Tab title oscillation
-- Beat-synced anything
-- Cmd+K palette, Konami code
-- Print stylesheet
+- Sub-pages (`/about`, `/writing`, `/uses`, `/now`)
+- Real project screenshots or images
+- Dither shader, ASCII art component
+- Blog, writing section
+- Light mode, accent colors, non-Monaspace fonts
 - Performance regression CI
-
----
-
-## Design skills available
-
-Use `frontend-design`, `design-taste-frontend`, `minimalist-ui`, and `full-output-enforcement` skills when implementing visual work. Reference designs in `docs/design-references/` for inspiration.
-
-## Quick reference
-
-| Need to know   | Where                                           |
-| -------------- | ----------------------------------------------- |
-| Design intent  | `HANDOFF.md`                                    |
-| v1 plan        | `plan.md`                                       |
-| Tokens / fonts | `HANDOFF.md` + `app/globals.css`                |
-| Perf baseline  | `docs/perf-baseline.md`                         |
-| Design refs    | `docs/design-references/`                       |
-| Design skills  | `.agents/skills/` (taste-skill suite)           |
