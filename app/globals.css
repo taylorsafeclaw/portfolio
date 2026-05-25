@@ -16,6 +16,7 @@
 
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
+  --font-serif: var(--font-serif);
 }
 
 :root {

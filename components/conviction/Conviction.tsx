@@ -3,6 +3,7 @@
 "use client";
 
 import { TextGenerate } from "@/components/story/TextGenerate";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 
 const STATEMENTS = [
   {
@@ -24,16 +25,18 @@ const STATEMENTS = [
 
 export function Conviction() {
   return (
-    <section className="relative z-10 mx-auto w-full max-w-[44ch] px-6 py-16 sm:py-24">
-      <div className="flex flex-col gap-20 sm:gap-24">
-        {STATEMENTS.map((stmt, i) => (
-          <TextGenerate
-            key={i}
-            segments={stmt.segments}
-            className="text-center font-[var(--font-serif)] italic text-[18px] leading-[1.6] text-[var(--fg-muted)] sm:text-[20px]"
-          />
-        ))}
-      </div>
-    </section>
+    <SectionWrapper shape="bottom-up" className="flex justify-center">
+      <section className="relative z-10 mx-auto w-full max-w-[44ch] px-6 py-16 sm:py-24">
+        <div className="flex flex-col gap-20 sm:gap-24">
+          {STATEMENTS.map((stmt, i) => (
+            <TextGenerate
+              key={i}
+              segments={stmt.segments}
+              className="text-center font-[var(--font-serif)] italic text-[18px] leading-[1.6] text-[var(--fg-muted)] sm:text-[20px]"
+            />
+          ))}
+        </div>
+      </section>
+    </SectionWrapper>
   );
 }

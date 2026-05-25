@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Wordmark } from "@/components/hero/Wordmark";
 import { ScrambleLink } from "@/components/hero/ScrambleLink";
-import { AsciiGrid } from "@/components/ascii/AsciiGrid";
 import { subscribe, getSnapshot } from "@/lib/scroll-store";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
@@ -59,7 +58,6 @@ export function Hero() {
         className="isolate flex min-h-[100dvh] w-full flex-col overflow-hidden px-6 sm:px-10"
         style={{ position: reduced ? "relative" : "sticky", top: reduced ? undefined : 0 }}
       >
-        <AsciiGrid />
         <HeroBackdrop />
         <Grain />
 

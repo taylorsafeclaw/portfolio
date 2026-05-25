@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Instrument_Serif } from "next/font/google";
+import { AsciiGrid } from "@/components/ascii/AsciiGrid";
 import "./globals.css";
 
 
@@ -20,6 +22,14 @@ const monaspaceXenon = localFont({
   display: "swap",
 });
 
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: "italic",
+  variable: "--font-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Taylor Allen",
   description:
@@ -32,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${monaspaceNeon.variable} ${monaspaceXenon.variable}`}
+      className={`${monaspaceNeon.variable} ${monaspaceXenon.variable} ${instrumentSerif.variable}`}
     >
       {/* prettier-ignore */}
       {/*
@@ -44,6 +54,7 @@ export default function RootLayout({
         you found the source. hi. — taylor
       */}
       <body className="min-h-screen antialiased">
+        <AsciiGrid />
         {children}
       </body>
     </html>
