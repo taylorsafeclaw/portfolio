@@ -1,0 +1,362 @@
+<h2>The complete interactive resume</h2>
+<p class="subtitle">Every component repurposed through the density ramp. Nothing looks borrowed — everything looks invented.</p>
+
+<div class="section">
+  <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(244,241,234,0.08); border-radius:8px; padding:20px; margin-bottom:16px;">
+    <p style="color:#f4f1ea; font-size:14px; margin-bottom:6px;"><strong>The density ramp is the design system</strong></p>
+    <p style="color:#9a9a9a; font-size:12px; line-height:1.7;">
+      Every component below uses the same visual primitive: <span style="color:#c8c6c2; font-family:ui-monospace;">· ░ ▒ ▓ █</span><br>
+      Spotlight effects → density gradient instead of light gradient<br>
+      Blur/focus → density descent instead of gaussian blur<br>
+      Borders → density characters traveling the perimeter<br>
+      Sparkles → characters briefly flash up the ramp<br>
+      Everything speaks one language. That's what makes it feel invented, not assembled.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 1: HERO -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="border-left:2px solid rgba(244,241,234,0.2); padding-left:16px; margin-bottom:32px;">
+  <h3 style="color:#f4f1ea;">1 · Hero <span style="color:#5a5a5a; font-size:11px; font-weight:400;">— built, needs ambient tuning</span></h3>
+
+  <div style="background:#0a0a0a; padding:20px; margin:12px 0; border-radius:6px; font-family:ui-monospace,monospace; font-size:11px; text-align:center;">
+    <div style="color:#f4f1ea; font-size:13px; letter-spacing:3px; margin-bottom:10px;">T A Y L O R</div>
+    <div style="color:#c8c6c2; font-size:12px;">Builder from the Bay. <span style="color:#f4f1ea;">Repeat founder.</span></div>
+  </div>
+
+  <table style="width:100%; font-size:12px; color:#9a9a9a; border-collapse:collapse; margin-top:8px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2; width:140px;">Breathing Field</td>
+      <td style="padding:6px 0;">Tune existing AsciiGrid — drop to ~10% opacity, add slow sinusoidal warmth waves. Characters felt, not read.</td>
+      <td style="padding:6px 0; color:#5a5a5a; width:80px; text-align:right;">existing</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Cursor Halo</td>
+      <td style="padding:6px 0;">Already built. Characters near cursor climb the ramp + brighten.</td>
+      <td style="padding:6px 0; color:#5a5a5a; text-align:right;">existing</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Density Sparkles</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Sparkles</strong> repurposed: random characters in the field briefly flash up the ramp (· → ▒ → ·) and settle back. Like stars winking. Very sparse — 2-3 per second across the whole viewport. Adds life without noise.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0; color:#c8c6c2;">Hero Dissolve</td>
+      <td style="padding:6px 0;">Already built. Wordmark fades + parallaxes on scroll.</td>
+      <td style="padding:6px 0; color:#5a5a5a; text-align:right;">existing</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 2: STORY -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="border-left:2px solid rgba(244,241,234,0.2); padding-left:16px; margin-bottom:32px;">
+  <h3 style="color:#f4f1ea;">2 · Story <span style="color:#5a5a5a; font-size:11px; font-weight:400;">— who I am, in narrative form</span></h3>
+
+  <div style="background:#0a0a0a; padding:24px; margin:12px 0; border-radius:6px; font-family:ui-monospace,monospace; font-size:12px;">
+    <div style="text-align:center; max-width:52ch; margin:0 auto; line-height:1.8;">
+      <span style="color:#c8c6c2;">I started my first company at 19.</span>
+      <span style="color:#9a9a9a;"> Built it from nothing, got it backed, shipped it, exited.</span>
+      <span style="color:#7a7a7a;"> Went deep on enterprise systems at Stanford Health.</span>
+      <span style="color:#c8c6c2;"> Now I'm back to building.</span>
+      <span style="color:#f4f1ea;"> The parts other people skip are the parts I'm drawn to.</span>
+    </div>
+  </div>
+
+  <table style="width:100%; font-size:12px; color:#9a9a9a; border-collapse:collapse; margin-top:8px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2; width:140px;">Density Erosion</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Canvas Reveal</strong> inverted: as section scrolls in, ASCII characters erode outward from center (█→▓→▒→░→·→gone), clearing space for text. Characters at the margins stay, breathing. The text lives in a clearing.</td>
+      <td style="padding:6px 0; color:#f4f1ea; width:80px; text-align:right;">new</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Text Generate</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Text Generate</strong> reskinned: words materialize one by one on scroll, paced to reading speed. Each word briefly flashes through the density ramp (░→▒→letter) before resolving. Not a fade — a crystallization.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0; color:#c8c6c2;">Lamp Gradient</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Lamp Effect</strong> repurposed: instead of a light glow, a density gradient radiates from where the text appears. Characters denser near the center of the narrative, fading outward. Gives the section visual weight without color.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 3: WORK -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="border-left:2px solid rgba(244,241,234,0.2); padding-left:16px; margin-bottom:32px;">
+  <h3 style="color:#f4f1ea;">3 · Work <span style="color:#5a5a5a; font-size:11px; font-weight:400;">— what I've built, as interactive cards</span></h3>
+
+  <div style="background:#0a0a0a; padding:24px; margin:12px 0; border-radius:6px; font-family:ui-monospace,monospace; font-size:12px;">
+    <div style="color:#5a5a5a; font-size:10px; letter-spacing:0.5px; margin-bottom:16px;">selected work</div>
+
+    <!-- Card mockup -->
+    <div style="border:1px solid rgba(255,255,255,0.06); padding:16px; margin-bottom:8px; position:relative;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+        <span style="color:#f4f1ea; font-size:13px;">poppin</span>
+        <span style="color:#3a3a3a; font-size:11px;">2021 — 2023</span>
+      </div>
+      <div style="color:#7a7a7a; font-size:11px;">co-founded a social events app at 19. pear-backed. exited.</div>
+      <!-- Density indicator -->
+      <div style="position:absolute; left:-12px; top:50%; transform:translateY(-50%); color:#5a5a5a; font-size:16px;">█</div>
+      <!-- Spotlight hint -->
+      <div style="position:absolute; right:8px; bottom:6px; color:#262626; font-size:10px;">·░▒ hover for more ▒░·</div>
+    </div>
+
+    <div style="border:1px solid rgba(255,255,255,0.04); padding:16px; position:relative; opacity:0.5;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+        <span style="color:#c8c6c2; font-size:13px;">stanford health care</span>
+        <span style="color:#3a3a3a; font-size:11px;">2023 — 2025</span>
+      </div>
+      <div style="color:#5a5a5a; font-size:11px;">enterprise architecture for hospital systems.</div>
+      <div style="position:absolute; left:-12px; top:50%; transform:translateY(-50%); color:#3a3a3a; font-size:16px;">▓</div>
+    </div>
+    <div style="color:#3a3a3a; font-size:10px; text-align:center; margin-top:12px;">↑ non-hovered cards dim (focus effect)</div>
+  </div>
+
+  <table style="width:100%; font-size:12px; color:#9a9a9a; border-collapse:collapse; margin-top:8px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2; width:140px;">Focus Cards</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Focus Cards</strong> repurposed: hovering one card makes non-hovered cards descend the density ramp — characters in their borders dim, text drops to --fg-quietest. Not gaussian blur — density-based dimming. The focused card's border characters climb the ramp.</td>
+      <td style="padding:6px 0; color:#f4f1ea; width:80px; text-align:right;">new</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Card Spotlight</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Card Spotlight</strong> repurposed: cursor creates a density gradient on the card surface. Instead of a light radial gradient, characters in the card's background climb the ramp near the cursor. A mini halo inside each card. Reveals subtle detail text as cursor moves across.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Direction Hover</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Direction Aware</strong> repurposed: when you approach a card, ASCII characters ripple inward from the direction of approach. Enter from the left → characters cascade left-to-right. Enter from below → characters cascade bottom-to-top. The card acknowledges where you came from.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Text Reveal</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Text Reveal Card</strong> repurposed: moving cursor across a card progressively reveals a hidden detail line. The reveal uses density erosion — characters part like curtains as your cursor sweeps across, exposing the detail text beneath.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Moving Border</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Moving Border</strong> repurposed: a density character (▓) travels the perimeter of the focused card — a slow orbit that marks it as active. Not a glowing pixel — an ASCII character walking the border. 3-4 second loop.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0; color:#c8c6c2;">Header Decode</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">MagicUI HyperText</strong> repurposed: "selected work" header scrambles through density ramp characters on scroll-in, then resolves. Uses existing ScrambleLink logic extended to viewport trigger.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">extend</td>
+    </tr>
+  </table>
+
+  <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:4px; margin-top:12px;">
+    <p style="color:#c8c6c2; font-size:11px; line-height:1.6;">
+      <strong>Synergy:</strong> Focus + Spotlight + Direction + Text Reveal + Moving Border all work together on each card. Approach → direction ripple. Hover → focus dims others + spotlight activates + moving border starts + hidden text begins revealing. Leave → everything settles. Five interactions, one seamless moment.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 4: CONVICTION -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="border-left:2px solid rgba(244,241,234,0.2); padding-left:16px; margin-bottom:32px;">
+  <h3 style="color:#f4f1ea;">4 · Conviction <span style="color:#5a5a5a; font-size:11px; font-weight:400;">— what I believe, in strong statements</span></h3>
+
+  <div style="background:#0a0a0a; padding:32px; margin:12px 0; border-radius:6px; font-family:ui-monospace,monospace; font-size:12px; text-align:center;">
+    <div style="max-width:44ch; margin:0 auto;">
+      <div style="color:#f4f1ea; font-size:16px; line-height:1.6; margin-bottom:32px;">
+        I keep starting things.
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,0.04); padding-top:32px; color:#9a9a9a; font-size:13px; line-height:1.7;">
+        The best products come from people who care about the details
+        <span style="color:#f4f1ea;">nobody asked them to care about.</span>
+      </div>
+    </div>
+  </div>
+
+  <table style="width:100%; font-size:12px; color:#9a9a9a; border-collapse:collapse; margin-top:8px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2; width:140px;">Scroll Pacing</td>
+      <td style="padding:6px 0;">Each statement lives on its own scroll beat. Generous whitespace (80-100px) between them. One thought at a time. The page slows down here.</td>
+      <td style="padding:6px 0; color:#5a5a5a; width:80px; text-align:right;">css only</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Emphasis Decode</td>
+      <td style="padding:6px 0;">Key phrases (--fg-peak text) appear through a slower density decode — characters climb the ramp over ~600ms instead of the headers' fast ~300ms. The emphasis earns its brightness.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">extend</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Field Resonance</td>
+      <td style="padding:6px 0;">As each conviction statement appears, the ASCII field's breathing tempo subtly shifts — faster pulse for intense statements, slower for reflective ones. The field responds to the emotional weight of the words.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0; color:#c8c6c2;">Evervault Texture</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Evervault Card</strong> repurposed: the background of this section has a subtle scrambling texture — characters continuously cycling through the ramp at very low opacity. Not random noise — organized, like the page is thinking. Cursor hovering near text calms the texture (characters slow down and settle).</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SECTION 5: CONTACT -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="border-left:2px solid rgba(244,241,234,0.2); padding-left:16px; margin-bottom:32px;">
+  <h3 style="color:#f4f1ea;">5 · Contact <span style="color:#5a5a5a; font-size:11px; font-weight:400;">— simple, warm, alive</span></h3>
+
+  <div style="background:#0a0a0a; padding:32px; margin:12px 0; border-radius:6px; font-family:ui-monospace,monospace; font-size:12px; text-align:center;">
+    <div style="color:#c8c6c2; font-size:14px; margin-bottom:12px;">Let's build something.</div>
+    <div style="color:#f4f1ea; font-size:13px; margin-bottom:20px; text-decoration:underline; text-underline-offset:4px; text-decoration-color:rgba(244,241,234,0.25);">taylor@taylorallen.dev</div>
+    <div style="color:#3a3a3a; font-size:11px;">Taylor Allen · 2026 · Bay Area</div>
+  </div>
+
+  <table style="width:100%; font-size:12px; color:#9a9a9a; border-collapse:collapse; margin-top:8px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2; width:140px;">Footer Gravity</td>
+      <td style="padding:6px 0;">Already built in scroll-store. ASCII field densifies at bottom — characters climb the ramp as you approach the end. The page compresses to a close.</td>
+      <td style="padding:6px 0; color:#5a5a5a; width:80px; text-align:right;">existing</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Magnetic CTA</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Magnetic Button</strong>: email link drifts toward cursor on proximity. Nearby ASCII characters also drift — they're pulled toward the CTA too. The whole area has gravity.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">ScrambleLink</td>
+      <td style="padding:6px 0;">Already built. Email scrambles through density characters on hover.</td>
+      <td style="padding:6px 0; color:#5a5a5a; text-align:right;">existing</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0; color:#c8c6c2;">Final Dissolve</td>
+      <td style="padding:6px 0;">At the very bottom edge, the dense footer-gravity field fades to nothing. The breathing stops. Clean black. The page exhales and ends.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CONNECTIVE TISSUE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="border-left:2px solid rgba(244,241,234,0.2); padding-left:16px; margin-bottom:32px;">
+  <h3 style="color:#f4f1ea;">Between sections <span style="color:#5a5a5a; font-size:11px; font-weight:400;">— the connective tissue</span></h3>
+
+  <table style="width:100%; font-size:12px; color:#9a9a9a; border-collapse:collapse; margin-top:8px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2; width:140px;">Border Beam</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">MagicUI Border Beam</strong> repurposed: between sections, a density character (░) travels along the hairline divider left → right. Not a glowing pixel — an ASCII character walking the line. Slow, meditative. Marks the transition between thoughts.</td>
+      <td style="padding:6px 0; color:#f4f1ea; width:80px; text-align:right;">new</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:6px 0; color:#c8c6c2;">Tracing Beam</td>
+      <td style="padding:6px 0;"><strong style="color:#c8c6c2;">Aceternity Tracing Beam</strong> repurposed: a thin vertical line on the left margin fills with density characters as you scroll (·→░→▒→▓→█). Marks your progress through the page. Dots at section positions. The beam is made of ASCII, not glow.</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0; color:#c8c6c2;">Section Erosion</td>
+      <td style="padding:6px 0;">Every section entrance uses the same density erosion pattern — ASCII field parts outward, content appears in the clearing. Consistency makes it feel systemic, not decorative. The erosion speed and shape varies per section (center-out for Story, top-down for Work, edges-in for Conviction).</td>
+      <td style="padding:6px 0; color:#f4f1ea; text-align:right;">new</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- FULL INVENTORY -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="margin-top:32px;">
+  <h3 style="color:#f4f1ea;">Complete component inventory</h3>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
+    <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:16px;">
+      <div style="color:#f4f1ea; font-size:11px; letter-spacing:0.5px; margin-bottom:8px;">EXISTING (tune/extend)</div>
+      <div style="font-size:12px; color:#9a9a9a; line-height:1.8;">
+        ✓ Breathing ASCII Field<br>
+        ✓ Cursor Halo<br>
+        ✓ ScrambleLink → extend to headers<br>
+        ✓ Hero Dissolve<br>
+        ✓ Footer Gravity<br>
+        ✓ Scroll Store
+      </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:16px;">
+      <div style="color:#f4f1ea; font-size:11px; letter-spacing:0.5px; margin-bottom:8px;">FROM ACETERNITY</div>
+      <div style="font-size:12px; color:#9a9a9a; line-height:1.8;">
+        + Focus Cards (density dimming)<br>
+        + Card Spotlight (density gradient)<br>
+        + Direction Aware Hover (ripple cascade)<br>
+        + Text Reveal Card (cursor sweep reveal)<br>
+        + Moving Border (orbiting density char)<br>
+        + Text Generate (word crystallization)<br>
+        + Evervault texture (thinking background)<br>
+        + Magnetic Button (gravity CTA)<br>
+        + Tracing Beam (scroll progress)<br>
+        + Canvas Reveal → Density Erosion<br>
+        + Lamp Effect → Density gradient
+      </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:16px;">
+      <div style="color:#f4f1ea; font-size:11px; letter-spacing:0.5px; margin-bottom:8px;">FROM MAGICUI</div>
+      <div style="font-size:12px; color:#9a9a9a; line-height:1.8;">
+        + Border Beam (section dividers)<br>
+        + HyperText → Header decode<br>
+        + Sparkles → Density sparkles
+      </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:16px;">
+      <div style="color:#f4f1ea; font-size:11px; letter-spacing:0.5px; margin-bottom:8px;">CUSTOM</div>
+      <div style="font-size:12px; color:#9a9a9a; line-height:1.8;">
+        + Density Erosion (scroll reveal)<br>
+        + Field Resonance (tempo shift)<br>
+        + Final Dissolve (page ending)<br>
+        + Emphasis Decode (slow ramp for key phrases)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SYNERGY MAP -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" style="margin-top:24px;">
+  <h3 style="color:#f4f1ea;">Synergy map — how everything connects</h3>
+
+  <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(244,241,234,0.08); border-radius:8px; padding:20px; font-size:12px; color:#c8c6c2; line-height:1.8;">
+    <pre style="color:#9a9a9a; font-size:11px; line-height:1.6; overflow-x:auto;">
+    BREATHING FIELD (persistent, everywhere)
+    │
+    ├── Density Sparkles (ambient life in the field)
+    │
+    ├── Cursor Halo (user interaction with the field)
+    │   └── Card Spotlight (halo applied inside cards)
+    │       └── Direction Aware (halo responds to approach angle)
+    │
+    ├── Density Erosion (scroll reveals content FROM the field)
+    │   ├── Text Generate (words crystallize from eroded space)
+    │   ├── Header Decode (titles materialize through the ramp)
+    │   └── Emphasis Decode (key phrases earn brightness slowly)
+    │
+    ├── Focus Cards (density dimming = field reclaiming non-focused cards)
+    │   ├── Text Reveal (cursor sweeps reveal detail through field)
+    │   └── Moving Border (density char orbits focused card)
+    │
+    ├── Field Resonance (breathing tempo responds to content weight)
+    │   └── Evervault Texture (thinking-state background for conviction)
+    │
+    ├── Footer Gravity (field densifies at page bottom)
+    │   ├── Magnetic CTA (field pulls toward the email link)
+    │   └── Final Dissolve (field fades to nothing at the very end)
+    │
+    └── Connective Tissue
+        ├── Border Beam (density char walks section dividers)
+        └── Tracing Beam (density-fill scroll progress on left margin)
+    </pre>
+
+    <p style="margin-top:12px; color:#f4f1ea; font-size:12px;">
+      <strong>Every branch traces back to the breathing field.</strong> Nothing is decorative — every effect is the field doing something. Eroding, responding, dimming, resonating, compressing, dissolving. The field is the character and every interaction is a conversation with it.
+    </p>
+  </div>
+</div>
