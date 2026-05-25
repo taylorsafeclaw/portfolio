@@ -17,9 +17,23 @@ const LIGHT_BIAS = [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4];
 const HALO_RADIUS = 140;
 const HALO_BOOST = 4;
 
-const FILL_STYLES: string[] = [];
-for (let i = 0; i <= 100; i++) {
-  FILL_STYLES[i] = `rgba(200, 198, 194, ${(i / 100).toFixed(3)})`;
+const FONT_STR = `${FONT_SIZE}px ui-monospace, "SF Mono", Menlo, monospace`;
+
+function buildGlyphAtlas(charW: number, charH: number, dpr: number): HTMLCanvasElement {
+  const glyphWPx = Math.ceil(charW * dpr);
+  const glyphHPx = Math.ceil(charH * dpr);
+  const atlas = document.createElement("canvas");
+  atlas.width = glyphWPx * RAMP_LEN;
+  atlas.height = glyphHPx;
+  const actx = atlas.getContext("2d")!;
+  actx.scale(dpr, dpr);
+  actx.font = FONT_STR;
+  actx.textBaseline = "top";
+  actx.fillStyle = "rgb(200, 198, 194)";
+  for (let i = 0; i < RAMP_LEN; i++) {
+    actx.fillText(RAMP[i], i * charW, 0);
+  }
+  return atlas;
 }
 
 function getReducedMotion(): boolean {
@@ -41,7 +55,10 @@ interface GridState {
   introEngine: IntroEngine | null;
   introSeeded: boolean;
   vh: number;
-  needsCtxReset: boolean;
+  atlas: HTMLCanvasElement | null;
+  glyphWPx: number;
+  glyphHPx: number;
+  dpr: number;
 }
 
 export function AsciiGrid() {
@@ -53,7 +70,7 @@ export function AsciiGrid() {
     if (!canvas) return;
 
     const dpr = window.innerWidth < 768
-      ? Math.min(1, window.devicePixelRatio || 1)
+      ? Math.min(1.5, window.devicePixelRatio || 1)
       : Math.min(2, window.devicePixelRatio || 1);
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -97,7 +114,10 @@ export function AsciiGrid() {
       introEngine: prev?.introEngine ?? new IntroEngine(cols, rows, centerCol, centerRow, charW, charH),
       introSeeded: prev?.introSeeded ?? false,
       vh: h,
-      needsCtxReset: true,
+      atlas: buildGlyphAtlas(charW, charH, dpr),
+      glyphWPx: Math.ceil(charW * dpr),
+      glyphHPx: Math.ceil(charH * dpr),
+      dpr,
     };
   }, []);
 
@@ -108,18 +128,17 @@ export function AsciiGrid() {
     if (!ctx) return;
 
     const reduced = getReducedMotion();
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
 
     resize();
 
     const mountTime = stateRef.current!.mountTime;
-    const fontStr = `${FONT_SIZE}px ui-monospace, "SF Mono", Menlo, monospace`;
 
     const draw = (now: number) => {
       const state = stateRef.current;
       if (!state) return;
 
-      const { cols, rows, buffer, mouseX, mouseY, mouseActive, introEngine, vh } = state;
+      const { cols, rows, buffer, mouseX, mouseY, mouseActive, introEngine, vh, atlas, glyphWPx, glyphHPx, dpr } = state;
+      if (!atlas) return;
       const charW = FONT_SIZE * 0.6;
       const charH = FONT_SIZE * LINE_HEIGHT;
       const scroll = getSnapshot();
@@ -128,12 +147,6 @@ export function AsciiGrid() {
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-
-      if (state.needsCtxReset) {
-        ctx.font = fontStr;
-        ctx.textBaseline = "top";
-        state.needsCtxReset = false;
-      }
 
       if (!introActive && introEngine && !state.introSeeded) {
         for (let r = 0; r < rows; r++) {
@@ -147,7 +160,7 @@ export function AsciiGrid() {
 
       // Compute per-frame constants outside the cell loop
       const total = cols * rows;
-      const sparkleRate = window.innerWidth < 768 ? 1 : 2.5;
+      const sparkleRate = window.innerWidth < 768 ? 2 : 2.5;
       const vw = canvas.width / dpr;
       const vh2 = canvas.height / dpr;
 
@@ -251,10 +264,11 @@ export function AsciiGrid() {
           alpha = Math.min(1, Math.max(0, alpha));
           if (alpha < 0.01) continue;
 
-          ctx.fillStyle = FILL_STYLES[Math.round(alpha * 100)];
-          ctx.fillText(RAMP[drawIdx], x, y);
+          ctx.globalAlpha = alpha;
+          ctx.drawImage(atlas, drawIdx * glyphWPx, 0, glyphWPx, glyphHPx, x, y, charW, charH);
         }
       }
+      ctx.globalAlpha = 1.0;
     };
 
     const loop = (now: number) => {
@@ -324,8 +338,7 @@ export function AsciiGrid() {
       const churnTimer = window.setInterval(() => {
         const state = stateRef.current;
         if (!state || state.paused) return;
-        // Halve churn count on mobile to reduce CPU work per interval
-        const churnCount = window.innerWidth < 768 ? 6 : CHURN_COUNT;
+        const churnCount = window.innerWidth < 768 ? 10 : CHURN_COUNT;
         for (let i = 0; i < churnCount; i++) {
           const idx = Math.floor(Math.random() * state.buffer.length);
           state.buffer[idx] =
