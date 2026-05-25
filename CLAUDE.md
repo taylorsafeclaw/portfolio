@@ -25,6 +25,13 @@ The full design + implementation spec lives in `HANDOFF.md` — read it before m
 
 **Current direction (May 2026):** Ship minimal. The hero animation is built and production-grade. Remaining work: Selected Work section, footer polish, 404 page, mobile pass, performance optimization (bundle is 171KB gz vs. 100KB ceiling), deploy. The Spotify/NowPlaying and bio footnotes direction in `plan.md` is **deprecated** — too much scope for v1. Ship what's built with enhancements, iterate post-launch.
 
+## Project management
+
+- **Linear workspace:** `taylorallen-portfolio` — team **TA** ([board](https://linear.app/taylorallen-portfolio/team/TA/all))
+- **GitHub repo:** `taylorsafeclaw/portfolio`
+- **Linear ↔ GitHub:** Issues are linked via branch names (`ta-123-slug`) and PR references. The Linear-GitHub integration syncs status automatically.
+- **MCP access:** Linear MCP is configured at the project level (`.claude/settings.local.json`). Use `mcp__linear-server__*` tools to create, update, and list issues directly.
+
 ## Commands
 
 - `pnpm dev` — start dev server on :3000
