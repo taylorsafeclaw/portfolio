@@ -615,7 +615,7 @@ const STATEMENTS = [
   },
   {
     segments: [
-      { text: "Self-taught since middle school. No degree." },
+      { text: "Self-taught since high school. No degree." },
       { text: "Everything I know, I learned by shipping.", emphasis: true },
     ],
   },

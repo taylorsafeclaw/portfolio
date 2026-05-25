@@ -267,7 +267,7 @@ Purpose: 2-3 strong beliefs. Each statement lives on its own scroll beat. This i
 
 > The best products come from people who care about **the details nobody asked them to care about.**
 
-> Self-taught since middle school. No degree. **Everything I know, I learned by shipping.**
+> Self-taught since high school. No degree. **Everything I know, I learned by shipping.**
 
 **Effects:**
 - Density erosion (edges-in) for section entrance
