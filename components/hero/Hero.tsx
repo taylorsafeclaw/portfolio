@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Wordmark } from "@/components/hero/Wordmark";
 import { ScrambleLink } from "@/components/hero/ScrambleLink";
-import { subscribe, getSnapshot } from "@/lib/scroll-store";
+import { reset as resetScroll, subscribe, getSnapshot } from "@/lib/scroll-store";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 const RESOLVE_DONE_MS = 4800;
@@ -13,6 +13,12 @@ export function Hero() {
   const [markHover, setMarkHover] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+
+  useLayoutEffect(() => {
+    if (reduced) return;
+    resetScroll();
+    window.scrollTo(0, 0);
+  }, [reduced]);
 
   useEffect(() => {
     if (reduced) return;

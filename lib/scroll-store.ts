@@ -66,3 +66,8 @@ export function getSnapshot(): ScrollSnapshot {
 export function getServerSnapshot(): ScrollSnapshot {
   return INITIAL;
 }
+
+export function reset(): void {
+  current = { ...INITIAL };
+  initialized = false;
+}
