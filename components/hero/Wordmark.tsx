@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { getSnapshot as getScrollSnapshot } from "@/lib/scroll-store";
 
@@ -103,8 +103,28 @@ const DISSOLVE_THRESHOLDS: Map<string, number> = (() => {
   return m;
 })();
 
+function computeTextShadow(glow: number): string {
+  return [
+    "0 0 0.5px rgba(244, 241, 234, 0.7)",
+    `0 0 ${8 + glow * 6}px rgba(244, 241, 234, ${0.08 + glow * 0.1})`,
+    `0 0 ${28 + glow * 18}px rgba(244, 241, 234, ${0.06 + glow * 0.08})`,
+    "0 1px 0 rgba(0, 0, 0, 0.4)",
+  ].join(", ");
+}
+
 export function Wordmark() {
-  const [grid, setGrid] = useState<Cell[][]>(() =>
+  const reduced = useReducedMotion();
+  const rafRef = useRef<number | null>(null);
+  const tabHidden = useRef(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Refs for direct DOM writes — zero React re-renders during animation
+  const echoPreRef = useRef<HTMLPreElement | null>(null);
+  const mainPreRef = useRef<HTMLPreElement | null>(null);
+  const haloPreRef = useRef<HTMLPreElement | null>(null);
+
+  // Mutable animation state — never triggers re-renders
+  const gridRef = useRef<Cell[][]>(
     RESOLVED_ROWS.map((row) =>
       row.split("").map((c) => ({
         ch: " " as Ramp | " ",
@@ -114,13 +134,8 @@ export function Wordmark() {
       })),
     ),
   );
-  const [glow, setGlow] = useState(0);
-
-  const reduced = useReducedMotion();
-  const rafRef = useRef<number | null>(null);
-  const tabHidden = useRef(false);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const preRef = useRef<HTMLPreElement | null>(null);
+  const glowRef = useRef(0);
+  const lastTextRef = useRef<string>("");
 
   useEffect(() => {
     const filled: Array<[number, number]> = [];
@@ -132,16 +147,20 @@ export function Wordmark() {
 
     if (reduced) {
       const id = requestAnimationFrame(() => {
-        setGrid(
-          RESOLVED_ROWS.map((row) =>
-            row.split("").map((c) => ({
-              ch: (c === " " ? " " : "█") as Ramp | " ",
-              isFilled: c !== " ",
-              progress: 1,
-              flicker: 0,
-            })),
-          ),
+        // Write fully-resolved text directly to DOM
+        gridRef.current = RESOLVED_ROWS.map((row) =>
+          row.split("").map((c) => ({
+            ch: (c === " " ? " " : "█") as Ramp | " ",
+            isFilled: c !== " ",
+            progress: 1,
+            flicker: 0,
+          })),
         );
+        const text = gridRef.current.map((row) => row.map((cell) => cell.ch).join("")).join("\n");
+        lastTextRef.current = text;
+        if (mainPreRef.current) mainPreRef.current.textContent = text;
+        if (echoPreRef.current) echoPreRef.current.textContent = text;
+        if (haloPreRef.current) haloPreRef.current.textContent = text;
       });
       return () => cancelAnimationFrame(id);
     }
@@ -174,106 +193,127 @@ export function Wordmark() {
     document.addEventListener("visibilitychange", onVisibility);
 
     const start = performance.now();
-    let raf = 0;
     const totalCols = RESOLVED_ROWS[0].length;
     const totalRows = RESOLVED_ROWS.length;
     const waveSpan = totalCols + totalRows * WAVE_SKEW + WAVE_BAND * 2;
 
     const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
 
+    // Mobile: cap at 30fps by skipping every other frame
+    const isMobile = window.innerWidth < 768;
+    let frameSkip = false;
+
     const tick = (now: number) => {
+      // 30fps cap on mobile
+      if (isMobile) {
+        frameSkip = !frameSkip;
+        if (frameSkip) {
+          rafRef.current = requestAnimationFrame(tick);
+          return;
+        }
+      }
+
       const elapsed = now - start;
       const dp = getScrollSnapshot().heroDissolve;
 
-      setGrid((prev) => {
-        const next = prev.map((row) => row.slice());
+      const grid = gridRef.current;
 
-        for (let r = 0; r < next.length; r++) {
-          for (let c = 0; c < next[r].length; c++) {
-            const cell = next[r][c];
-            if (!cell.isFilled) continue;
-            const key = `${r},${c}`;
+      for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < grid[r].length; c++) {
+          const cell = grid[r][c];
+          if (!cell.isFilled) continue;
+          const key = `${r},${c}`;
 
-            if (elapsed < APPEAR_START) {
-              next[r][c] = { ch: " ", isFilled: true, progress: 0, flicker: 0 };
-              continue;
-            }
+          if (elapsed < APPEAR_START) {
+            cell.ch = " ";
+            cell.progress = 0;
+            cell.flicker = 0;
+            continue;
+          }
 
-            const aDelay = appearDelays.get(key) ?? 0;
-            const aLocal = elapsed - APPEAR_START - aDelay;
-            const aProgress = Math.max(0, Math.min(1, aLocal / 300));
+          const aDelay = appearDelays.get(key) ?? 0;
+          const aLocal = elapsed - APPEAR_START - aDelay;
+          const aProgress = Math.max(0, Math.min(1, aLocal / 300));
 
-            const sDelay = setDelays.get(key) ?? 0;
-            const sLocal = elapsed - SET_START - sDelay;
-            const sProgress = Math.max(0, Math.min(1, sLocal / 480));
+          const sDelay = setDelays.get(key) ?? 0;
+          const sLocal = elapsed - SET_START - sDelay;
+          const sProgress = Math.max(0, Math.min(1, sLocal / 480));
 
-            // Wave influence (suppress during dissolve)
-            let waveBoost = 0;
-            const sinceFirstWave =
-              elapsed - RESOLVE_DONE - WAVE_INITIAL_DELAY;
-            if (sinceFirstWave >= 0 && !tabHidden.current && dp < 0.1) {
-              const cyclePos = sinceFirstWave % WAVE_INTERVAL;
-              if (cyclePos < WAVE_DURATION) {
-                const t = cyclePos / WAVE_DURATION;
-                const ease = t * t * (3 - 2 * t);
-                const headX = -WAVE_BAND + ease * waveSpan;
-                const wavePos = headX - r * WAVE_SKEW;
-                const dist = Math.abs(c - wavePos);
-                if (dist < WAVE_BAND) {
-                  const u = 1 - dist / WAVE_BAND;
-                  waveBoost = u * u * (3 - 2 * u) * 0.85;
-                }
+          // Wave influence (suppress during dissolve)
+          let waveBoost = 0;
+          const sinceFirstWave =
+            elapsed - RESOLVE_DONE - WAVE_INITIAL_DELAY;
+          if (sinceFirstWave >= 0 && !tabHidden.current && dp < 0.1) {
+            const cyclePos = sinceFirstWave % WAVE_INTERVAL;
+            if (cyclePos < WAVE_DURATION) {
+              const t = cyclePos / WAVE_DURATION;
+              const ease = t * t * (3 - 2 * t);
+              const headX = -WAVE_BAND + ease * waveSpan;
+              const wavePos = headX - r * WAVE_SKEW;
+              const dist = Math.abs(c - wavePos);
+              if (dist < WAVE_BAND) {
+                const u = 1 - dist / WAVE_BAND;
+                waveBoost = u * u * (3 - 2 * u) * 0.85;
               }
             }
+          }
 
-            const decayed = Math.max(0, cell.flicker - 0.06);
-            const flicker = Math.max(decayed, waveBoost);
+          const decayed = Math.max(0, cell.flicker - 0.06);
+          const flicker = Math.max(decayed, waveBoost);
 
-            let ch: Ramp | " " = " ";
-            let progress = 0;
+          let ch: Ramp | " " = " ";
+          let progress = 0;
 
-            if (aProgress <= 0) {
+          if (aProgress <= 0) {
+            ch = " ";
+            progress = 0;
+          } else if (sProgress <= 0) {
+            const jitter = pseudoRandom(r * 31 + c, Math.floor(elapsed / 80));
+            ch = jitter < 0.85 ? "░" : "·";
+            progress = 0;
+          } else {
+            progress = easeOutCubic(sProgress);
+            const eff = Math.max(0, progress - flicker * 0.75);
+            ch = rampForProgress(eff);
+          }
+
+          // Dissolve: reverse crystal growth — cells erode from edges inward
+          if (dp > 0.02 && elapsed > RESOLVE_DONE) {
+            const threshold = DISSOLVE_THRESHOLDS.get(key) ?? 0.5;
+
+            const local = dp - threshold;
+            if (local >= 0.04) {
               ch = " ";
               progress = 0;
-            } else if (sProgress <= 0) {
-              const jitter = pseudoRandom(r * 31 + c, Math.floor(elapsed / 80));
-              ch = jitter < 0.85 ? "░" : "·";
-              progress = 0;
-            } else {
-              progress = easeOutCubic(sProgress);
-              const eff = Math.max(0, progress - flicker * 0.75);
-              ch = rampForProgress(eff);
+            } else if (local >= 0.02) {
+              ch = "·";
+              progress = 0.05;
+            } else if (local >= 0) {
+              ch = "░";
+              progress = 0.2;
             }
-
-            // Dissolve: reverse crystal growth — cells erode from edges inward
-            if (dp > 0.02 && elapsed > RESOLVE_DONE) {
-              const threshold = DISSOLVE_THRESHOLDS.get(key) ?? 0.5;
-
-              const local = dp - threshold;
-              if (local >= 0.04) {
-                ch = " ";
-                progress = 0;
-              } else if (local >= 0.02) {
-                ch = "·";
-                progress = 0.05;
-              } else if (local >= 0) {
-                ch = "░";
-                progress = 0.2;
-              }
-            }
-
-            next[r][c] = { ch, isFilled: true, progress, flicker };
           }
-        }
 
-        return next;
-      });
+          cell.ch = ch;
+          cell.progress = progress;
+          cell.flicker = flicker;
+        }
+      }
+
+      // Only rewrite DOM when text actually changes
+      const newText = grid.map((row) => row.map((cell) => cell.ch).join("")).join("\n");
+      if (newText !== lastTextRef.current) {
+        lastTextRef.current = newText;
+        if (mainPreRef.current) mainPreRef.current.textContent = newText;
+        if (echoPreRef.current) echoPreRef.current.textContent = newText;
+        if (haloPreRef.current) haloPreRef.current.textContent = newText;
+      }
 
       // Glow swell (suppress during dissolve)
-      const sinceFirstWave = elapsed - RESOLVE_DONE - WAVE_INITIAL_DELAY;
+      const sinceFirstWaveGlow = elapsed - RESOLVE_DONE - WAVE_INITIAL_DELAY;
       let nextGlow = 0;
-      if (sinceFirstWave >= 0 && dp < 0.1) {
-        const cyclePos = sinceFirstWave % WAVE_INTERVAL;
+      if (sinceFirstWaveGlow >= 0 && dp < 0.1) {
+        const cyclePos = sinceFirstWaveGlow % WAVE_INTERVAL;
         if (cyclePos < WAVE_DURATION) {
           const t = cyclePos / WAVE_DURATION;
           nextGlow = Math.sin(t * Math.PI);
@@ -286,25 +326,24 @@ export function Wordmark() {
           ? Math.max(0, 1 - (elapsed - RESOLVE_DONE) / 700) * 0.8
           : 0;
 
-      setGlow(nextGlow + resolveFlash);
+      const newGlow = nextGlow + resolveFlash;
+      glowRef.current = newGlow;
 
-      raf = requestAnimationFrame(tick);
-      rafRef.current = raf;
+      // Write textShadow directly to DOM
+      if (mainPreRef.current) {
+        mainPreRef.current.style.textShadow = computeTextShadow(newGlow);
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
     };
 
-    raf = requestAnimationFrame(tick);
-    rafRef.current = raf;
+    rafRef.current = requestAnimationFrame(tick);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [reduced]);
-
-  const text = useMemo(
-    () => grid.map((row) => row.map((c) => c.ch).join("")).join("\n"),
-    [grid],
-  );
 
   return (
     <div
@@ -325,6 +364,7 @@ export function Wordmark() {
       }}
     >
       <pre
+        ref={echoPreRef}
         aria-hidden
         className="pointer-events-none absolute inset-0 m-0 select-none whitespace-pre text-center text-[var(--fg-quietest)] leading-[1.05] text-[9px] min-[420px]:text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
         style={{
@@ -332,29 +372,21 @@ export function Wordmark() {
           transform: "translate(2px, 2px)",
           opacity: 0.5,
         }}
-      >
-        {text}
-      </pre>
+      />
       <pre
-        ref={preRef}
+        ref={mainPreRef}
         aria-label="Taylor"
         className="relative m-0 select-none whitespace-pre text-center text-[var(--fg-peak)] leading-[1.05] text-[9px] min-[420px]:text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
         style={{
           fontFamily: "var(--font-mono), ui-monospace, monospace",
-          textShadow: [
-            "0 0 0.5px rgba(244, 241, 234, 0.7)",
-            `0 0 ${8 + glow * 6}px rgba(244, 241, 234, ${0.08 + glow * 0.1})`,
-            `0 0 ${28 + glow * 18}px rgba(244, 241, 234, ${0.06 + glow * 0.08})`,
-            "0 1px 0 rgba(0, 0, 0, 0.4)",
-          ].join(", "),
+          textShadow: computeTextShadow(0),
           transition: "text-shadow 80ms linear",
         }}
-      >
-        {text}
-      </pre>
+      />
       <pre
+        ref={haloPreRef}
         aria-hidden
-        className="pointer-events-none absolute inset-0 m-0 select-none whitespace-pre text-center leading-[1.05] text-[9px] min-[420px]:text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
+        className="hidden md:block pointer-events-none absolute inset-0 m-0 select-none whitespace-pre text-center leading-[1.05] text-[9px] min-[420px]:text-[14px] sm:text-[18px] md:text-[22px] lg:text-[26px]"
         style={{
           fontFamily: "var(--font-mono), ui-monospace, monospace",
           color: "#ffffff",
@@ -367,9 +399,7 @@ export function Wordmark() {
             "radial-gradient(circle 150px at var(--mx, -300px) var(--my, -300px), black 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.35) 65%, transparent 100%)",
           transition: "opacity 180ms ease",
         }}
-      >
-        {text}
-      </pre>
+      />
     </div>
   );
 }

@@ -206,6 +206,17 @@
   to { transform: translateX(100%); }
 }
 
+@keyframes border-beam-slide {
+  from { transform: translateX(-10px); }
+  to   { transform: translateX(calc(100cqw + 10px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .border-beam-char {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-fade-in {
     animation: none;

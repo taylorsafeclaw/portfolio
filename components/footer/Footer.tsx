@@ -9,7 +9,7 @@ import { SectionWrapper } from "@/components/shared/SectionWrapper";
 const TAGLINE_SEGMENTS = [{ text: "Let's build something." }];
 
 export function Footer() {
-  const { ref: magneticRef, offset } = useMagnetic(200, 4);
+  const { ref: magneticRef } = useMagnetic(200, 4);
   const reduced = useReducedMotion();
 
   return (
@@ -26,8 +26,7 @@ export function Footer() {
             ref={magneticRef as React.RefObject<HTMLSpanElement>}
             style={{
               display: "inline-block",
-              transform: reduced ? undefined : `translate(${offset.x}px, ${offset.y}px)`,
-              transition: "transform 150ms ease",
+              transition: reduced ? undefined : "transform 150ms ease",
             }}
           >
             <ScrambleLink

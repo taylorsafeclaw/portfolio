@@ -49,10 +49,19 @@ export function SectionWrapper({ children, shape, className = "" }: Props) {
     };
 
     update();
-    window.addEventListener("scroll", update, { passive: true });
+    let pending = false;
+    const throttledUpdate = () => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        update();
+      });
+    };
+    window.addEventListener("scroll", throttledUpdate, { passive: true });
     window.addEventListener("resize", update, { passive: true });
     return () => {
-      window.removeEventListener("scroll", update);
+      window.removeEventListener("scroll", throttledUpdate);
       window.removeEventListener("resize", update);
     };
   }, [ref]);
