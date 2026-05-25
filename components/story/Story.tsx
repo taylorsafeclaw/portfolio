@@ -1,5 +1,5 @@
 import { HeaderDecode } from "@/components/shared/HeaderDecode";
-import { TextGenerate } from "@/components/story/TextGenerate";
+import { DensityResolve } from "@/components/story/DensityResolve";
 import { SectionWrapper } from "@/components/shared/SectionWrapper";
 
 const SEGMENTS = [
@@ -12,7 +12,7 @@ export function Story() {
     <SectionWrapper shape="center-out" className="flex justify-center">
       <section className="relative z-10 mx-auto w-full max-w-[52ch] px-6 pt-24 pb-12 sm:px-10 sm:pt-32 sm:pb-16">
         <HeaderDecode text="about" className="mb-8" />
-        <TextGenerate
+        <DensityResolve
           segments={SEGMENTS}
           className="text-center font-mono text-[16px] leading-[1.75] text-[var(--fg)] sm:text-[17px]"
         />
