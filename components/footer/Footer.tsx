@@ -1,7 +1,7 @@
 "use client";
 
 import { ScrambleLink } from "@/components/hero/ScrambleLink";
-import { TextGenerate } from "@/components/story/TextGenerate";
+import { DensityResolve } from "@/components/story/DensityResolve";
 import { useMagnetic } from "@/lib/hooks/useMagnetic";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { SectionWrapper } from "@/components/shared/SectionWrapper";
@@ -15,7 +15,7 @@ export function Footer() {
   return (
     <SectionWrapper shape="edges-in">
       <footer className="relative z-10 mx-auto w-full max-w-[52ch] px-6 pt-16 pb-8 text-center sm:px-10 sm:pt-24 sm:pb-10">
-        <TextGenerate
+        <DensityResolve
           segments={TAGLINE_SEGMENTS}
           className="mb-6 font-mono text-[14px] text-[var(--fg)] sm:text-[15px]"
         />
@@ -31,7 +31,7 @@ export function Footer() {
           >
             <ScrambleLink
               href="mailto:taylor@taylorallen.dev"
-              className="font-mono text-[14px] text-[var(--fg-peak)] sm:text-[15px]"
+              className="font-mono text-[15px] text-[var(--fg-peak)] sm:text-[16px]"
             >
               taylor@taylorallen.dev
             </ScrambleLink>
