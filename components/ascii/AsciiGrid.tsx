@@ -52,7 +52,9 @@ export function AsciiGrid() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = window.innerWidth < 768
+      ? Math.min(1, window.devicePixelRatio || 1)
+      : Math.min(2, window.devicePixelRatio || 1);
     const w = window.innerWidth;
     const h = window.innerHeight;
 
@@ -149,8 +151,9 @@ export function AsciiGrid() {
       const vw = canvas.width / dpr;
       const vh2 = canvas.height / dpr;
 
+      const isMobile = window.innerWidth < 768;
       let haloColMin = 0, haloColMax = -1, haloRowMin = 0, haloRowMax = -1;
-      if (mouseActive) {
+      if (mouseActive && !isMobile) {
         const haloColR = Math.ceil(HALO_RADIUS / charW);
         const haloRowR = Math.ceil(HALO_RADIUS / charH);
         const mc = Math.floor(mouseX / charW);
@@ -228,8 +231,8 @@ export function AsciiGrid() {
             }
           }
 
-          // Mouse proximity: local ramp shift (Aino-style)
-          if (mouseActive && r >= haloRowMin && r <= haloRowMax && c >= haloColMin && c <= haloColMax) {
+          // Mouse proximity: local ramp shift (Aino-style) — desktop only
+          if (mouseActive && !isMobile && r >= haloRowMin && r <= haloRowMax && c >= haloColMin && c <= haloColMax) {
             const mdx = x + charW / 2 - mouseX;
             const mdy = y + charH / 2 - mouseY;
             const d = Math.sqrt(mdx * mdx + mdy * mdy);

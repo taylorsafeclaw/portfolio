@@ -1,7 +1,5 @@
 // components/conviction/Conviction.tsx
 
-"use client";
-
 import { TextGenerate } from "@/components/story/TextGenerate";
 import { SectionWrapper } from "@/components/shared/SectionWrapper";
 

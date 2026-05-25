@@ -1,5 +1,3 @@
-"use client";
-
 import { HeaderDecode } from "@/components/shared/HeaderDecode";
 import { TextGenerate } from "@/components/story/TextGenerate";
 import { SectionWrapper } from "@/components/shared/SectionWrapper";

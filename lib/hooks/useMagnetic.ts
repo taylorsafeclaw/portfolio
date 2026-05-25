@@ -1,18 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-interface MagneticOffset {
-  x: number;
-  y: number;
-}
-
-export function useMagnetic(
-  radius: number = 200,
-  maxDrift: number = 4,
-) {
+export function useMagnetic(radius: number = 200, maxDrift: number = 4) {
   const ref = useRef<HTMLElement>(null);
-  const [offset, setOffset] = useState<MagneticOffset>({ x: 0, y: 0 });
 
   useEffect(() => {
     const el = ref.current;
@@ -30,18 +21,19 @@ export function useMagnetic(
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist > radius) {
-        setOffset({ x: 0, y: 0 });
+        el.style.transform = "";
         return;
       }
 
       const strength = 1 - dist / radius;
-      setOffset({
-        x: (dx / dist) * strength * maxDrift,
-        y: (dy / dist) * strength * maxDrift,
-      });
+      const x = (dx / dist) * strength * maxDrift;
+      const y = (dy / dist) * strength * maxDrift;
+      el.style.transform = `translate(${x}px, ${y}px)`;
     };
 
-    const handleLeave = () => setOffset({ x: 0, y: 0 });
+    const handleLeave = () => {
+      el.style.transform = "";
+    };
 
     window.addEventListener("mousemove", handleMove);
     document.addEventListener("mouseleave", handleLeave);
@@ -51,5 +43,5 @@ export function useMagnetic(
     };
   }, [radius, maxDrift]);
 
-  return { ref, offset };
+  return { ref };
 }
