@@ -1,0 +1,79 @@
+<h2>The ASCII field problem</h2>
+<p class="subtitle">After the intro resolves, the ambient ASCII state feels like noise — not design. What should happen?</p>
+
+<div class="section">
+  <h3>Current behavior (the problem)</h3>
+  <div class="mockup">
+    <div class="mockup-header">After intro resolves — ambient state</div>
+    <div class="mockup-body" style="background:#0a0a0a; color:#c8c6c2; font-family:ui-monospace,monospace; padding:40px; text-align:center; min-height:350px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; position:relative; overflow:hidden;">
+      <!-- Simulated ASCII noise -->
+      <div style="position:absolute; inset:0; opacity:0.25; font-size:13px; line-height:1.35; color:rgba(200,198,194,0.3); overflow:hidden; pointer-events:none; padding:8px;">
+        <div>· · : - · · + · · : · - · · · = · · · : · + · · - · · · : · · = · · + · · - · ·</div>
+        <div>· : · · · - · · · = · · + · · · : · · - · · = · · · + · · : · - · · · · · = · ·</div>
+        <div>- · · · : · · = · + · · · - · · : · · · = · · · + · - · · · : · · = · + · · · -</div>
+        <div>· · = · · · + · · - · · · : · · · = · · + · · - · · : · · · = · + · · · - · · :</div>
+        <div>· : · - · · · = · · + · · · - · : · · · = · · + · · - · · : · · = · · + · · · -</div>
+        <div>= · · · + · · - · · : · · · = · · + · · · - · : · · = · · · + · · - · · : · · ·</div>
+        <div>· · - · · : · · = · · + · · · - · · · : · · = · + · · · - · · : · · · = · · + ·</div>
+        <div>· + · · · - · · : · · · = · · + · · - · · · : · · = · · + · · · - · · : · · · =</div>
+        <div>: · · = · · + · · · - · · : · · · = · · + · · - · · · : · · = · · + · · · - · ·</div>
+      </div>
+      <!-- Wordmark -->
+      <div style="font-size:22px; font-weight:500; letter-spacing:4px; color:#f4f1ea; text-shadow:0 0 12px rgba(244,241,234,0.15); position:relative; z-index:1;">
+        ████████  █████  ██  ██ ██      ██████  ██████<br>
+           ██    ██   ██  ████  ██      ██  ██  ██   ██<br>
+           ██    ███████   ██   ██      ██  ██  ██████<br>
+           ██    ██   ██   ██   ██████  ██████  ██   ██
+      </div>
+      <div style="font-size:16px; color:#c8c6c2; max-width:58ch; line-height:1.75; position:relative; z-index:1;">
+        Hi, I'm Taylor. Builder from the Bay. <span style="color:#f4f1ea; font-weight:500;">Repeat founder.</span>
+      </div>
+      <div style="position:relative; z-index:1; display:flex; gap:32px; font-size:15px;">
+        <span style="color:#f4f1ea;">selected work →</span>
+        <span style="color:#9a9a9a;">taylor@taylorallen.dev</span>
+      </div>
+      <!-- Problem annotation -->
+      <div style="position:absolute; bottom:12px; right:16px; font-size:11px; color:#ff6b6b; letter-spacing:0.5px;">
+        ↑ ASCII field still churning — feels like noise, not design
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>What should happen after the intro resolves?</h3>
+  <p class="subtitle">Three directions for the ASCII field's post-intro life</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Fade to silence</h3>
+      <p>After the wordmark resolves, the ASCII field fades out almost entirely — just the faintest texture remains. The hero becomes the wordmark + bio on a near-clean dark canvas. The ASCII had its moment in the intro; it doesn't need to keep performing.</p>
+      <p style="color:#7d8187; font-size:13px; margin-top:8px;"><strong>Vibe:</strong> Confident restraint. The intro earned attention, the resting state holds it.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Consolidate into structure</h3>
+      <p>After the intro, the random ASCII characters drift/settle into intentional patterns — forming subtle grid lines, section dividers, or density bands that become the page's structural skeleton. The noise becomes architecture.</p>
+      <p style="color:#7d8187; font-size:13px; margin-top:8px;"><strong>Vibe:</strong> The chaos of creation settling into the order of a finished thing.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Retreat to edges</h3>
+      <p>The ASCII field pulls away from center after the intro — characters migrate toward the viewport edges, forming a living border/frame around the content. Center stays clean, edges stay alive. Cursor halo still works on the edges.</p>
+      <p style="color:#7d8187; font-size:13px; margin-top:8px;"><strong>Vibe:</strong> The medium is always present but never competing with the message.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <p style="color:#7d8187; font-size:13px;">These aren't mutually exclusive — B and C could combine. And all of them feed into the scroll transition question: what happens to the ASCII world as you scroll into the content sections below.</p>
+</div>

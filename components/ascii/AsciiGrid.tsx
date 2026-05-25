@@ -4,6 +4,8 @@ import { useEffect, useRef, useCallback } from "react";
 import { RAMP, RAMP_LEN } from "@/lib/ascii/ramp";
 import { getSnapshot } from "@/lib/scroll-store";
 import { IntroEngine, INTRO_DURATION } from "@/lib/ascii/intro";
+import { breathingAlpha, sparkleBoost, erosionAlpha } from "@/lib/ascii/density";
+import { erosionZones } from "@/components/shared/SectionWrapper";
 
 const FONT_SIZE = 13;
 const LINE_HEIGHT = 1.35;
@@ -141,6 +143,12 @@ export function AsciiGrid() {
         state.introSeeded = true;
       }
 
+      // Compute per-frame constants outside the cell loop
+      const total = cols * rows;
+      const sparkleRate = window.innerWidth < 768 ? 1 : 2.5;
+      const vw = canvas.width / dpr;
+      const vh2 = canvas.height / dpr;
+
       let haloColMin = 0, haloColMax = -1, haloRowMin = 0, haloRowMax = -1;
       if (mouseActive) {
         const haloColR = Math.ceil(HALO_RADIUS / charW);
@@ -171,11 +179,16 @@ export function AsciiGrid() {
             // Normal ambient mode
             const baseIdx = buffer[idx];
             const viewportNorm = y / vh;
-            alpha = 0.18 + (baseIdx / RAMP_LEN) * 0.18;
+            // Reduced base alpha for site-wide field (~8-10% vs hero's 18%)
+            alpha = 0.06 + (baseIdx / RAMP_LEN) * 0.08;
             drawIdx = baseIdx;
 
-            const breathPhase = Math.sin(now * 0.0008 + c * 0.3 + r * 0.4);
-            alpha += breathPhase * 0.03;
+            // Breathing wave from density module
+            alpha += breathingAlpha(c, r, now);
+
+            // Sparkle: random brief density boost for a cell
+            const sparkle = sparkleBoost(idx, now, total, sparkleRate);
+            drawIdx = Math.min(RAMP_LEN - 1, drawIdx + sparkle);
 
             // Scroll reactivity: hero dissolve dims the field
             if (scroll.heroDissolve > 0) {
@@ -226,6 +239,11 @@ export function AsciiGrid() {
               drawIdx = Math.min(RAMP_LEN - 2, drawIdx + Math.floor(boost));
               alpha += proximity * 0.2;
             }
+          }
+
+          // Erosion zones: dim ASCII field around visible content sections
+          if (!introActive && erosionZones.length > 0) {
+            alpha *= erosionAlpha(x, y, vw, vh2, erosionZones);
           }
 
           drawIdx = Math.min(RAMP_LEN - 1, Math.max(0, drawIdx));
@@ -305,7 +323,9 @@ export function AsciiGrid() {
       const churnTimer = window.setInterval(() => {
         const state = stateRef.current;
         if (!state || state.paused) return;
-        for (let i = 0; i < CHURN_COUNT; i++) {
+        // Halve churn count on mobile to reduce CPU work per interval
+        const churnCount = window.innerWidth < 768 ? 6 : CHURN_COUNT;
+        for (let i = 0; i < churnCount; i++) {
           const idx = Math.floor(Math.random() * state.buffer.length);
           state.buffer[idx] =
             LIGHT_BIAS[Math.floor(Math.random() * LIGHT_BIAS.length)];
@@ -336,7 +356,7 @@ export function AsciiGrid() {
     <canvas
       ref={canvasRef}
       aria-hidden
-      className="pointer-events-none absolute inset-0"
+      className="pointer-events-none fixed inset-0 z-0"
     />
   );
 }

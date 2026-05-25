@@ -1,0 +1,205 @@
+<h2>Component palette for your interactive resume</h2>
+<p class="subtitle">Curated from MagicUI, Aceternity, and ReactBits — only things that fit the dark/mono/ASCII world. Organized by where they'd live on the page.</p>
+
+<div class="section">
+  <h3 style="color:#f4f1ea;">🏗️ How these map to your site</h3>
+  <p style="font-size:13px; color:#9a9a9a; line-height:1.6;">
+    Your site has a unique ASCII identity. These components aren't used as-is — they're <strong style="color:#dadbdf;">reskinned to your design system</strong> (monochrome, Monaspace, density ramp). Think of them as interaction patterns to steal, not visual styles to copy.
+  </p>
+</div>
+
+<!-- HERO / BACKGROUND -->
+<div class="section">
+  <h3>Hero & Background Layer</h3>
+  <p class="subtitle">What lives behind and around all content</p>
+</div>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="flickering-grid" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Flickering Grid → ASCII Breathing Grid</h3>
+      <p><strong>From:</strong> MagicUI <strong>·</strong> <strong>What it does:</strong> SVG grid of squares that randomly flicker at configurable opacity</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Replace squares with ASCII density characters (·░▒▓). Each cell flickers through the ramp instead of fading opacity. This REPLACES your current AsciiGrid with something more purposeful — the breathing effect you want, but built as a proper component. Add cursor proximity boost (your existing halo logic).</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Medium — refactor existing AsciiGrid to use this pattern</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="canvas-reveal" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Canvas Reveal Effect → ASCII Erosion on Scroll</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Dot matrix expands from cursor position on hover</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Invert the concept — instead of dots appearing, ASCII characters <em>dissolve away</em> as you scroll into content sections. The erosion effect: dense ASCII field (█▓▒) erodes outward from where content will appear, revealing clean text. Scroll-driven, not hover-driven.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: High — custom implementation inspired by the pattern</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="svg-mask" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>SVG Mask Effect → Cursor Reveals Content Through ASCII</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Circular mask follows cursor, revealing hidden content underneath</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> The ASCII field is the mask layer. Your cursor creates a clear window that shows the content beneath. On mobile, content reveals on scroll instead. Could be used selectively — maybe just for an "about" section or a hidden easter egg, not the whole page (usability).</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Medium — Aceternity component + ASCII overlay integration</p>
+    </div>
+  </div>
+</div>
+
+<!-- TEXT EFFECTS -->
+<div class="section">
+  <h3>Text & Typography Interactions</h3>
+  <p class="subtitle">How text appears, reacts, and moves</p>
+</div>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="encrypted-text" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Encrypted Text → Section Header Decode</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Text reveals through scrambled characters, like decryption</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> You already have ScrambleLink for CTAs. This extends the pattern to section headers and content blocks. Each section heading decodes through the density ramp (█▓▒░·→text) as it enters the viewport. Use your existing ramp characters as the charset. Stronger version of what you have.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low — extend existing ScrambleLink pattern, or drop in Aceternity's component reskinned</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="text-reveal" onclick="toggleSelect(this)">
+    <div class="letter">5</div>
+    <div class="content">
+      <h3>Text Generate Effect → Narrative Scroll Reveal</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Text fades in word-by-word or character-by-character on scroll</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> For your narrative/story sections. As you scroll, your bio or "currently" text materializes word by word — like the page is being written as you read it. Pairs with the ASCII erosion: characters dissolve to reveal words that then generate in.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low — Aceternity component drops in, restyle with Monaspace</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="morphing-text" onclick="toggleSelect(this)">
+    <div class="letter">6</div>
+    <div class="content">
+      <h3>Morphing Text → Role/Identity Cycling</h3>
+      <p><strong>From:</strong> MagicUI <strong>·</strong> <strong>What it does:</strong> Text smoothly morphs between different words/phrases</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> A subtle identity line that cycles: "founder" → "engineer" → "builder" → "architect". Not flashy — the morphing happens through ASCII density transitions, not smooth interpolation. Characters descend the ramp, swap, climb back. On-brand.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Medium — custom morph using density ramp instead of standard interpolation</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="number-ticker" onclick="toggleSelect(this)">
+    <div class="letter">7</div>
+    <div class="content">
+      <h3>Number Ticker → Stats That Count Up</h3>
+      <p><strong>From:</strong> MagicUI <strong>·</strong> <strong>What it does:</strong> Numbers animate from 0 to target value</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Subtle stats on scroll-in: "3 startups shipped" · "2 exits" · "4 years building". The numbers tick up through the monospace font. Not a dashboard — just quiet proof points that animate once.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low — MagicUI drop-in, restyle</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCROLL & NAVIGATION -->
+<div class="section">
+  <h3>Scroll & Navigation Patterns</h3>
+  <p class="subtitle">How the page flows and how you move through it</p>
+</div>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="tracing-beam" onclick="toggleSelect(this)">
+    <div class="letter">8</div>
+    <div class="content">
+      <h3>Tracing Beam → ASCII Scroll Progress</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Glowing beam traces an SVG path as you scroll</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> A vertical line along the left edge that fills with density characters as you scroll (· → ░ → ▒ → ▓ → █). Acts as both progress indicator and visual anchor. The beam is made of ASCII, not glow. Dots mark section positions.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Medium — custom implementation inspired by Tracing Beam's scroll-tracking</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="timeline" onclick="toggleSelect(this)">
+    <div class="letter">9</div>
+    <div class="content">
+      <h3>Timeline → Career/Experience Flow</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Vertical timeline with sticky headers and scroll beam tracking</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Your experience section. Instead of a table, a vertical timeline where each entry scroll-reveals with the ASCII erosion effect. The beam connecting entries is made of density characters. Entries decode on scroll-in. Sticky year labels in --fg-quiet.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Medium — Aceternity Timeline reskinned heavily</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sticky-scroll" onclick="toggleSelect(this)">
+    <div class="letter">10</div>
+    <div class="content">
+      <h3>Sticky Scroll Reveal → Deep Dive Sections</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Left text scrolls while right side stays sticky, updating content</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> For a "how I work" or project deep-dive section. Left side: scrolling narrative. Right side: sticky ASCII art or code snippet or terminal that updates as you scroll through the story. The sticky panel could show different density patterns for each phase.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Medium — Aceternity component + content creation</p>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE ELEMENTS -->
+<div class="section">
+  <h3>Interactive Elements & Microinteractions</h3>
+  <p class="subtitle">The details that make it feel alive</p>
+</div>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="terminal" onclick="toggleSelect(this)">
+    <div class="letter">11</div>
+    <div class="content">
+      <h3>Terminal → Command-Line Bio / About</h3>
+      <p><strong>From:</strong> MagicUI <strong>·</strong> <strong>What it does:</strong> MacOS-style terminal with typing animation and sequenced output</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Instead of a static bio section, a terminal that "runs" on scroll-in. <code>$ whoami</code> → types out your story. <code>$ ls projects/</code> → lists your work. Reskinned: no macOS chrome, just a minimal monospace block with your density ramp as the prompt character. The terminal IS the about section.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low-Medium — MagicUI Terminal + content writing</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="magnetic-button" onclick="toggleSelect(this)">
+    <div class="letter">12</div>
+    <div class="content">
+      <h3>Magnetic Button → CTA Gravity</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Button drifts toward cursor on proximity</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Your email CTA or "let's talk" link. As cursor approaches, the text drifts toward it — subtle magnetic pull. Combined with the existing ScrambleLink effect: magnetic pull + character scramble on hover. Two interactions layered.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low — small utility, big feel</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="dither-shader" onclick="toggleSelect(this)">
+    <div class="letter">13</div>
+    <div class="content">
+      <h3>Dither Shader → Project Thumbnails</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Real-time ordered dithering on images — pixel art / retro aesthetic</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> When you eventually add real project screenshots, they render through a monochrome dither shader — making photos feel native to your ASCII world. Grayscale + Bayer dithering + your ink palette colors. Images earn their place by becoming part of the system.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low — Aceternity drop-in, configure for monochrome</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="ascii-art" onclick="toggleSelect(this)">
+    <div class="letter">14</div>
+    <div class="content">
+      <h3>ASCII Art Component → Project Previews</h3>
+      <p><strong>From:</strong> Aceternity <strong>·</strong> <strong>What it does:</strong> Converts images to ASCII art with configurable charset and animations</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Project screenshots rendered as ASCII art that animates in on scroll. Use your density ramp as the charset. On hover, the ASCII dissolves to reveal the actual screenshot (or vice versa). Creates a consistent visual language where everything is ASCII-first.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low — Aceternity drop-in with custom charset</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="border-beam" onclick="toggleSelect(this)">
+    <div class="letter">15</div>
+    <div class="content">
+      <h3>Border Beam → Section Dividers</h3>
+      <p><strong>From:</strong> MagicUI <strong>·</strong> <strong>What it does:</strong> Animated light beam travels along element borders</p>
+      <p style="color:#9a9a9a; font-size:13px; margin-top:6px;"><strong>How you'd use it:</strong> Between content sections, a beam of light traces the hairline divider — a single warm-white pixel traveling left to right. Subtle, alive, and it replaces static <code>border-bottom</code> with something that breathes. Uses your --fg-peak color at low opacity.</p>
+      <p style="color:#7d8187; font-size:12px; margin-top:4px;">Effort: Low — MagicUI drop-in, color override</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px; padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+  <h3 style="color:#f4f1ea; margin-bottom:8px;">My top 6 recommendation for v1</h3>
+  <p style="font-size:13px; color:#c8c6c2; line-height:1.7;">
+    <strong>#1</strong> Flickering Grid → ASCII Breathing (replaces current AsciiGrid)<br>
+    <strong>#4</strong> Encrypted Text → Section headers decode through density ramp<br>
+    <strong>#5</strong> Text Generate → Narrative content reveals word-by-word<br>
+    <strong>#9</strong> Timeline → Experience section with scroll beam<br>
+    <strong>#11</strong> Terminal → Interactive about/bio section<br>
+    <strong>#15</strong> Border Beam → Living section dividers<br>
+    <br>
+    <span style="color:#7d8187;">These six give you: a living background, interactive text, scroll-driven narrative, a unique experience section, and micro-details that signal craft. All reskinnable to your monochrome/Monaspace/density-ramp system.</span>
+  </p>
+</div>

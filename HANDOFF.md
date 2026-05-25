@@ -1,8 +1,15 @@
+> **ARCHIVED.** This file is the original implementation spec and is no longer the source of truth. The project has moved to an interactive resume concept with a site-wide living ASCII field. See the current spec at:
+> `docs/superpowers/specs/2026-05-24-interactive-resume-design.md`
+>
+> The content below is kept for historical reference only. Do not use it to make new decisions.
+
+---
+
 # Claude design
 
 https://api.anthropic.com/v1/design/h/7zWLlHDnPDQeegVVIt6GjQ?open_file=Hero.html
 
-# Personal Site — Implementation Handoff
+# Personal Site — Implementation Handoff (ARCHIVED)
 
 This document is the complete spec for building **taylorallen.dev** (or whatever the final domain is) — a single-page personal site for Taylor Allen, a 22-year-old repeat founder and builder from the Bay Area.
 
