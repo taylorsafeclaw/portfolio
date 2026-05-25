@@ -26,7 +26,7 @@ const PEAK_END = 2800;
 const SIGMA = 0.30;
 const ECHO_SIGMA = 0.12;
 const ECHO_OFFSET = 0.15;
-const PEAK_ALPHA = 0.50;
+const PEAK_ALPHA = 0.35;
 const BLOOM_REACH = 1.05;
 
 const TWO_SIGMA_SQ = 2 * SIGMA * SIGMA;
@@ -143,7 +143,7 @@ export class IntroEngine {
     // --- Phase 1: Dormant (0-100ms) ---
     if (elapsed < DORMANT_END) {
       const fadeIn = Math.min(1, elapsed / 100);
-      let alpha = 0.15 + fadeIn * 0.15;
+      let alpha = 0.10 + fadeIn * 0.08;
 
       const flickerPhase = this.hashes1[idx] * 6.28;
       const flickerFreq = 0.005 + this.hashes2[idx] * 0.004;
@@ -151,7 +151,7 @@ export class IntroEngine {
       const flickerIntensity = Math.max(0, (flickerWave - 0.92) / 0.08);
 
       const rampBoost = Math.floor(flickerIntensity * 2);
-      alpha += flickerIntensity * 0.15;
+      alpha += flickerIntensity * 0.10;
 
       this._result.rampIdx = Math.min(RAMP_LEN - 2, seed + rampBoost);
       this._result.alpha = alpha;
@@ -190,8 +190,8 @@ export class IntroEngine {
 
       const bloomInfluence =
         Math.max(gaussAlpha, settleEased) * ignitionFactor;
-      let alpha = 0.28 + (PEAK_ALPHA - 0.28) * bloomInfluence;
-      alpha += 0.10 * echoGauss * ignitionFactor;
+      let alpha = 0.15 + (PEAK_ALPHA - 0.15) * bloomInfluence;
+      alpha += 0.06 * echoGauss * ignitionFactor;
 
       const densityT = Math.max(
         0,
@@ -255,7 +255,7 @@ export class IntroEngine {
       Math.round(cappedPeak + (ambientRamp - cappedPeak) * smoothT),
     );
 
-    const alpha = PEAK_ALPHA + (0.18 - PEAK_ALPHA) * smoothT;
+    const alpha = PEAK_ALPHA + (0.08 - PEAK_ALPHA) * smoothT;
 
     this._result.rampIdx = Math.min(RAMP_LEN - 2, rampIdx);
     this._result.alpha = alpha;

@@ -190,10 +190,8 @@ export function AsciiGrid() {
             const sparkle = sparkleBoost(idx, now, total, sparkleRate);
             drawIdx = Math.min(RAMP_LEN - 1, drawIdx + sparkle);
 
-            // Scroll reactivity: hero dissolve dims the field
-            if (scroll.heroDissolve > 0) {
-              alpha *= 1 - scroll.heroDissolve * 0.35;
-            }
+            // Hero area: blend field into background; restore full intensity past hero
+            alpha *= 0.5 + scroll.heroDissolve * 0.5;
 
             // Section divider: density band during scroll transition
             if (scroll.heroDissolve > 0.3 && scroll.heroDissolve < 1.0) {
