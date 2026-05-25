@@ -347,6 +347,7 @@ export function AsciiGrid() {
       document.removeEventListener("mouseleave", onLeave);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", onResize);
+      stateRef.current = null;
     };
   }, [resize]);
 
