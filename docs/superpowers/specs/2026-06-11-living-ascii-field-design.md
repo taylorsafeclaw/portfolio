@@ -132,6 +132,49 @@ preallocated `Float32Array`s; zero allocation in the loop.
 
 ---
 
+## 3b. Beyond Aino — what makes it ours
+
+Aino's field is pointillist: density only. Ours gets three properties theirs doesn't
+have. None adds color, glow, or a new visual language — they deepen the one we have.
+
+**A. Flow-aligned strokes — the field is calligraphic, not pointillist.**
+In the mid-density band (indices 3–9), the drawn glyph is substituted by the *local flow
+direction* of the field: `-` for horizontal flow, `|` for vertical, `/` and `\` for
+diagonals (angle bucketed into four). Direction comes from finite differences on the
+already-computed target grid — zero extra noise evaluations. Low density stays dots and
+ticks; high density stays digits and letters; but the middle — the bulk of every visible
+cloud — renders as strokes *aligned with the current that shaped it*. The field stops
+being noise rendered in text and becomes something like a woodcut of weather: currents
+you can trace with your eye. This is the single highest-leverage beauty move in the
+rebuild, and nothing on aino.agency does it.
+Mechanics: density math is untouched (ramp index is still the only dimension);
+substitution happens at draw time. The atlas gains `\` and `|` as variant glyphs, and
+alpha uses `luminance(densityIndex) × coverageNorm[drawnGlyph]`, so brightness stays
+monotonic through substitutions.
+
+**B. One heartbeat — the mark and the medium share physics.**
+The wordmark already breathes (the diagonal sheen wave, every ~5.2s). Today the field
+doesn't know. Now each wordmark pulse emits a faint radial **ripple** into the field
+from the mark's center: a +2 ramp band traveling outward, dissipating by ~40% of the
+viewport. Active only while the hero holds the viewport (`heroDissolve < 0.5`). The
+effect is subliminal — the page has *one* pulse, and everything answers to it.
+Mechanics: `lib/ascii/pulse-store.ts`, a 20-line store like `scroll-store` (Wordmark
+publishes pulse timestamps + origin; the field engine consumes). Ripples are an additive
+mask on `target` — same code path serves §3b-C.
+
+**C. Touch the ink.**
+- **Click ripple:** pointer-down anywhere drops a single ink ripple (crest +4 ramp,
+  one ring, ~900ms). The medium is tactile everywhere, not just under the cursor wake.
+  Max 3 concurrent ripples; oldest evicted.
+- **Scroll drag:** scroll velocity adds a small, capped counter-advection to the field
+  drift — scrolling reads as *moving through* the medium, which answers your motion like
+  water. Decays back to ambient wind over ~1.5s. (Touch scrolling gets this too — it's
+  the one field interaction mobile keeps.)
+
+Reduced motion: all three off (static frame, as specced).
+
+---
+
 ## 4. The cursor: a wake, not a spotlight
 
 The fixed 140px halo becomes a **trail**. A ring buffer holds the last 24 pointer
@@ -226,14 +269,16 @@ per frame. Zero new dependencies. `prefers-reduced-motion`: single static frame.
 
 | file                                  | change                                                        |
 | ------------------------------------- | ------------------------------------------------------------- |
-| `lib/ascii/ramp.ts`                   | `FIELD_RAMP` (25), `BLOCK_RAMP` (UI), luminance curve         |
+| `lib/ascii/ramp.ts`                   | `FIELD_RAMP` (25), `BLOCK_RAMP` (UI), directional variants (`\` `|`), luminance curve |
 | `lib/ascii/noise.ts`                  | **new** — value noise, fbm, domain warp                       |
-| `lib/ascii/field.ts`                  | **new** — target/current engine, intro bloom, trail, gravity  |
+| `lib/ascii/field.ts`                  | **new** — target/current engine, intro bloom, trail, ripples, flow substitution, gravity |
+| `lib/ascii/pulse-store.ts`            | **new** — ~20 lines; wordmark pulses + click ripples → field  |
 | `lib/ascii/intro.ts`                  | **deleted**                                                   |
 | `lib/ascii/density.ts`                | erosion kept (geometries unchanged); breathing/sparkle deleted |
-| `components/ascii/AsciiGrid.tsx`      | rewritten around the engine; atlas + coverage table; trail input |
+| `components/ascii/AsciiGrid.tsx`      | rewritten around the engine; atlas + coverage table; trail/ripple/scroll-drag input |
+| `components/hero/Wordmark.tsx`        | one-line addition: publish wave pulses to pulse-store         |
 | `lib/ascii/scramble.ts` + consumers   | charset → mid-ramp field characters                           |
-| everything else                       | untouched (Hero, Wordmark, sections, scroll-store, SectionWrapper) |
+| everything else                       | untouched (Hero, sections, scroll-store, SectionWrapper)      |
 
 ---
 
@@ -244,8 +289,10 @@ per frame. Zero new dependencies. `prefers-reduced-motion`: single static frame.
    range/continuity, easing convergence, erosion mask bounds, intro mask continuity at
    phase boundaries (no value jumps > 1 ramp step at boundary crossings).
 3. Visual: at rest the field shows 2–4 coherent drifting structures, ~half the viewport
-   empty; no letter glyphs visible ambiently; cursor sweep surfaces letters; intro reads
-   bloom → peak breath → recede with no visible mode seam; footer floods with name
+   empty; mid-density regions read as flow-aligned strokes (currents traceable by eye);
+   no letter glyphs visible ambiently; cursor sweep surfaces letters; intro reads
+   bloom → peak breath → recede with no visible mode seam; wordmark pulses visibly
+   ripple the field in the hero; click drops an ink ripple; footer floods with name
    characters then resolves quiet.
 4. Frame time < 6ms desktop mid-range, no per-frame GC (DevTools performance trace).
 5. Reduced motion: static frame, zero rAF after first paint.
