@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   AMBIENT_CEIL,
+  ATLAS_BACKSLASH,
   ATLAS_GLYPHS,
   ATLAS_LEN,
+  ATLAS_PIPE,
   FIELD_RAMP,
   FIELD_RAMP_LEN,
   SCRAMBLE_CHARS,
@@ -33,8 +35,8 @@ describe("FIELD_RAMP", () => {
 
   it("atlas glyph list is the ramp plus the two flow-only strokes", () => {
     expect(ATLAS_LEN).toBe(FIELD_RAMP_LEN + 2);
-    expect(ATLAS_GLYPHS[FIELD_RAMP_LEN]).toBe("\\");
-    expect(ATLAS_GLYPHS[FIELD_RAMP_LEN + 1]).toBe("|");
+    expect(ATLAS_GLYPHS[ATLAS_BACKSLASH]).toBe("\\");
+    expect(ATLAS_GLYPHS[ATLAS_PIPE]).toBe("|");
   });
 });
 
@@ -70,5 +72,34 @@ describe("coverageNorm", () => {
       expect(perceived).toBeGreaterThan(prev);
       prev = perceived;
     }
+  });
+
+  it("stays non-decreasing when thin glyphs hit the boost cap", () => {
+    // realistic low end — "·" ":" carry almost no ink, well below ref / 2.5
+    const thin = [0.015, 0.035, 0.02, 0.05];
+    const coverage = new Float32Array(FIELD_RAMP_LEN);
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      coverage[i] =
+        i <= thin.length
+          ? thin[i - 1]
+          : 0.07 + (0.3 - 0.07) * ((i - thin.length - 1) / (FIELD_RAMP_LEN - thin.length - 2));
+    }
+    const norm = coverageNorm(coverage);
+    let prev = 0;
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      const perceived = luminance(i) * norm[i] * coverage[i];
+      expect(perceived).toBeGreaterThanOrEqual(prev);
+      prev = perceived;
+    }
+  });
+
+  it("gives zero-coverage entries a norm of 1", () => {
+    const coverage = new Float32Array(FIELD_RAMP_LEN);
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      coverage[i] = i === 5 ? 0 : 0.2;
+    }
+    const norm = coverageNorm(coverage);
+    expect(norm[0]).toBe(1);
+    expect(norm[5]).toBe(1);
   });
 });

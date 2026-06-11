@@ -34,13 +34,20 @@ export const ATLAS_LEN = FIELD_RAMP_LEN + 2;
 export const RESOLVE_CHAR_MS = 400;
 export const RESOLVE_SWEEP_MS = 50;
 
+// Slightly sub-linear curve lifts the faint low end of the ramp into visibility.
+const LUMINANCE_GAMMA = 0.85;
+// Alpha ceiling at the dense end of the full ramp (§2, §3).
+const LUMINANCE_PEAK = 0.25;
+// Cap on per-glyph alpha boost so near-invisible glyphs don't get blown out.
+const MAX_COVERAGE_BOOST = 2.5;
+
 /**
  * Base alpha for a continuous ramp position (0–24). Monotonic; ambient tops
  * out ~0.16 at AMBIENT_CEIL, the full ramp at 0.25 (§2, §3).
  */
 export function luminance(rampPos: number): number {
   if (rampPos <= 0) return 0;
-  return Math.pow(rampPos / (FIELD_RAMP_LEN - 1), 0.85) * 0.25;
+  return Math.pow(rampPos / (FIELD_RAMP_LEN - 1), LUMINANCE_GAMMA) * LUMINANCE_PEAK;
 }
 
 /**
@@ -61,7 +68,19 @@ export function coverageNorm(coverage: Float32Array): Float32Array {
   const ref = n > 0 ? sum / n : 1;
   const norm = new Float32Array(coverage.length);
   for (let i = 0; i < coverage.length; i++) {
-    norm[i] = coverage[i] > 0 ? Math.min(2.5, ref / coverage[i]) : 1;
+    norm[i] = coverage[i] > 0 ? Math.min(MAX_COVERAGE_BOOST, ref / coverage[i]) : 1;
+  }
+  // The cap can leave a thin glyph dimmer than its ramp predecessor; since
+  // luminance is strictly increasing, restoring non-decreasing effective
+  // ink (norm × coverage) along the ramp repairs the monotonic guarantee
+  // without reintroducing the unbounded boost. Only the ramp-ordered prefix
+  // applies — atlas indices past FIELD_RAMP_LEN are flow glyphs.
+  const rampEnd = Math.min(coverage.length, FIELD_RAMP_LEN);
+  for (let i = 2; i < rampEnd; i++) {
+    const prevInk = norm[i - 1] * coverage[i - 1];
+    if (coverage[i] > 0 && norm[i] * coverage[i] < prevInk) {
+      norm[i] = prevInk / coverage[i];
+    }
   }
   return norm;
 }
