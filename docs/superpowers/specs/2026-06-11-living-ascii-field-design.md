@@ -236,6 +236,57 @@ All existing APIs keep their shape; what they modulate changes from alpha to ram
 
 ---
 
+## 6b. Micro-interactions — the Aino-craft pass
+
+Live exploration of aino.agency (61 captures; catalog in the research notes) shows their
+distinctiveness is less the field than the *density of tiny, precise interactions* —
+24 cataloged. The ones worth our language, upgraded for ours:
+
+**Char-precision hover scramble (upgrade `ScrambleLink`, reuse on WorkCard titles).**
+Aino's signature: only the characters *under and adjacent to* the cursor scramble — the
+glyph you touch, ±1 cell — each walking the ramp-alphabet out and back on an
+easeOutQuint triangle wave (~1000ms), case preserved. Today our ScrambleLink scrambles
+the whole label; localized scramble reads as touching letters, not triggering an effect.
+Monospace makes hit-testing trivial (`offsetX / charW` — no caret APIs). Keyboard focus
+keeps the existing whole-label scramble (no cursor to localize). Scramble alphabet: the
+mid-ramp field characters (§1) — our equivalent of Aino salting theirs with Ø/Ä/Å.
+
+**Ramp-walk as the universal enter.** Aino resolves *every* image and text block along
+the ramp on load and on each route change (space → char, ~1500ms, 50ms per-row sweep) —
+arrival itself is the identity. We already own this grammar (`DensityResolve`,
+`TextGenerate`, `HeaderDecode`); the pass here is unification: all three re-tuned to the
+new 25-step ramp with one shared constants block (per-char 400ms, per-row sweep 50ms),
+so every materialization on the page is recognizably the same physics as the field.
+
+**A live clock in the footer.** Aino's footer ticks `GBG/SAL · HH:MM:SS`. Ours gains
+`bay area · HH:MM:SS` (local time), seconds ticking, in the existing `--fg-quiet` 11px
+line. One `setInterval(1000)`, mounted with the footer, cleared on unmount; static
+timestamp under reduced motion. The quietest possible proof the page is alive.
+
+**A definitive end-state, borrowed as principle.** Aino's intro ends with a physics
+collapse into the logo — it *concludes*, it doesn't loop. Ours already does this in our
+own grammar (the recede drains the field's ink into the wordmark, §5); noted here so the
+implementation treats the intro's final frame as a composition, not a fade-out.
+
+**Deliberately not taken** (parking lot, post-v1): the TEXT/PIXEL mode easter egg,
+cursor-cell text labels ("CLICK" — we have no click-gated content, and CLAUDE.md bans
+scroll/interaction hints), retro palette themes, the arcade. Restraint is the brief.
+
+---
+
+## 6c. Architecture divergence note — canvas, not text node
+
+Aino renders the field as a single `<div>` text node rewritten per frame — elegant, but
+a text node has **no per-character alpha**, and our entire luminance model (§1, §2 —
+continuous alpha between ramp steps, coverage normalization, soft shores) depends on it.
+Aino doesn't need it: dark-on-paper at full opacity. We keep the existing
+canvas + glyph-atlas renderer (already built, profiled, atlas-batched) and adopt the
+part of their architecture that *is* better: strict grid discipline — the
+`--ascii-cols/rows/ch/line` CSS variables we already export stay the single source of
+truth so DOM content and field cells share one lattice.
+
+---
+
 ## 7. Atlas and font
 
 - Atlas extends to 25 glyphs and renders with **Monaspace Neon** (`var(--font-mono)` is
@@ -278,6 +329,9 @@ per frame. Zero new dependencies. `prefers-reduced-motion`: single static frame.
 | `components/ascii/AsciiGrid.tsx`      | rewritten around the engine; atlas + coverage table; trail/ripple/scroll-drag input |
 | `components/hero/Wordmark.tsx`        | one-line addition: publish wave pulses to pulse-store         |
 | `lib/ascii/scramble.ts` + consumers   | charset → mid-ramp field characters                           |
+| `components/hero/ScrambleLink.tsx`    | char-precision hover scramble (ramp-travel triangle wave)     |
+| `components/story/DensityResolve.tsx`, `TextGenerate`, `HeaderDecode` | re-tuned to 25-step ramp, shared constants block |
+| `components/footer/Footer.tsx`        | live clock (`bay area · HH:MM:SS`)                            |
 | everything else                       | untouched (Hero, sections, scroll-store, SectionWrapper)      |
 
 ---
@@ -293,7 +347,8 @@ per frame. Zero new dependencies. `prefers-reduced-motion`: single static frame.
    no letter glyphs visible ambiently; cursor sweep surfaces letters; intro reads
    bloom → peak breath → recede with no visible mode seam; wordmark pulses visibly
    ripple the field in the hero; click drops an ink ripple; footer floods with name
-   characters then resolves quiet.
+   characters then resolves quiet; hovering a link scrambles only the characters under
+   the cursor; footer clock ticks.
 4. Frame time < 6ms desktop mid-range, no per-frame GC (DevTools performance trace).
 5. Reduced motion: static frame, zero rAF after first paint.
 6. CLS 0, bundle delta ≤ +3KB gz (noise + engine offset by deleted intro engine).
