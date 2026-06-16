@@ -67,6 +67,7 @@ export function valueNoise3(perm: Uint8Array, x: number, y: number, z: number): 
 
 /** fbm: lacunarity 2, gain 0.5, normalized to [0, 1] (§3). */
 export function fbm(perm: Uint8Array, x: number, y: number, z: number, octaves: number): number {
+  if (octaves <= 0) return 0;
   let amp = 0.5;
   let freq = 1;
   let sum = 0;
@@ -97,6 +98,7 @@ export function warpedFbm(perm: Uint8Array, x: number, y: number, z: number, oct
 }
 
 export function smoothstep(edge0: number, edge1: number, x: number): number {
+  if (edge1 === edge0) return x >= edge1 ? 1 : 0;
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
 }

@@ -42,6 +42,12 @@ describe("valueNoise3 / fbm / warpedFbm", () => {
       expect(v).toBeLessThanOrEqual(1);
     }
   });
+
+  it("fbm with zero octaves returns 0, never NaN", () => {
+    expect(fbm(perm, 1, 1, 1, 0)).toBe(0);
+    expect(Number.isNaN(fbm(perm, 1, 1, 1, 0))).toBe(false);
+    expect(Number.isNaN(warpedFbm(perm, 1, 1, 1, 0))).toBe(false);
+  });
 });
 
 describe("smoothstep", () => {
@@ -49,5 +55,11 @@ describe("smoothstep", () => {
     expect(smoothstep(0.42, 0.85, 0)).toBe(0);
     expect(smoothstep(0.42, 0.85, 1)).toBe(1);
     expect(smoothstep(0.42, 0.85, 0.635)).toBeCloseTo(0.5, 1);
+  });
+
+  it("handles a degenerate edge range without producing NaN", () => {
+    expect(smoothstep(0.5, 0.5, 0.5)).not.toBeNaN();
+    expect(smoothstep(0.5, 0.5, 0.5)).toBe(1);
+    expect(smoothstep(0.5, 0.5, 0.4)).toBe(0);
   });
 });
