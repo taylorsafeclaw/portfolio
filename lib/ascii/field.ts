@@ -32,7 +32,10 @@ export const TAU_CLASS_EROSION = 3;
 export const FEATURE_SCALE = 0.3; // feature wavelength ≈ 30% of min(vw, vh)
 export const DRIFT_PX_S = 8; // diagonal advection speed
 export const MORPH_PERIOD_MS = 60_000; // time-as-third-phase morph
-export const CONTRAST_LO = 0.47; // smoothstep edges — emptiness lives below
+// smoothstep low edge — spec §3 writes 0.42, but the warped-fbm distribution
+// needs ~0.47 to leave ~half the field empty (the spec's actual stated goal,
+// pinned by the "roughly half rests at space" test). Visual-tuned, not literal.
+export const CONTRAST_LO = 0.47;
 export const CONTRAST_HI = 0.85;
 export const HERO_FLOOR = 0.55; // ambient scale while the hero holds the viewport (§6)
 
@@ -49,8 +52,9 @@ export const RIPPLE_SPEED = 0.35; // px/ms ring expansion
 export const RIPPLE_SIGMA = 30; // px gaussian band half-width
 export const PULSE_REACH = 0.4; // pulses dissipate by 40% of the viewport
 
-// footer flood (§6)
-export const GRAVITY_STEPS = 12;
+// footer flood (§6) — uncapped climb to the dense end so R 0 L Y A T flood the
+// lower viewport before the final void (spec §6); 28 reaches the name letters.
+export const GRAVITY_STEPS = 28;
 
 // intro (§5) — the total envelope matches the wordmark (RESOLVE_DONE 4800)
 export const INTRO_DORMANT_END = 250;
