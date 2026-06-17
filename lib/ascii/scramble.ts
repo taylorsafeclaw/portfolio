@@ -1,4 +1,4 @@
-const DEFAULT_CHARS = "·:-=+*#%";
+import { SCRAMBLE_CHARS } from "@/lib/ascii/ramp";
 
 function shouldPreserve(ch: string): boolean {
   return ch === " " || ch === "@" || ch === "." || ch === "→" || ch === "-";
@@ -7,7 +7,7 @@ function shouldPreserve(ch: string): boolean {
 export function scrambleText(
   text: string,
   progress: number,
-  chars: string = DEFAULT_CHARS,
+  chars: string = SCRAMBLE_CHARS,
 ): string {
   let out = "";
   for (let i = 0; i < text.length; i++) {

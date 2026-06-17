@@ -6,10 +6,10 @@ import { useEffect, useRef, useState } from "react";
 import { useInView } from "@/lib/hooks/useInView";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { scrambleText } from "@/lib/ascii/scramble";
+import { RESOLVE_CHAR_MS } from "@/lib/ascii/ramp";
 
-const DECODE_MS = 300;
+const DECODE_MS = RESOLVE_CHAR_MS;
 const TICK_MS = 28;
-const DENSITY_CHARS = "·░▒▓█-:=+";
 
 interface Props {
   text: string;
@@ -32,7 +32,7 @@ export function HeaderDecode({ text, className = "", as: Tag = "h2" }: Props) {
 
     const tick = () => {
       const t = Math.min(1, (performance.now() - start) / DECODE_MS);
-      setDisplay(scrambleText(text, t, DENSITY_CHARS));
+      setDisplay(scrambleText(text, t));
       if (t < 1) {
         id = setTimeout(tick, TICK_MS);
       }
