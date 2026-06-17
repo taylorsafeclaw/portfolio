@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { getSnapshot as getScrollSnapshot } from "@/lib/scroll-store";
+import { emitPulse } from "@/lib/ascii/pulse-store";
 
 const WORDMARK_RAMP = ["·", "░", "▒", "▓", "█"] as const;
 type Ramp = (typeof WORDMARK_RAMP)[number];
@@ -135,6 +136,7 @@ export function Wordmark() {
     ),
   );
   const glowRef = useRef(0);
+  const lastPulseCycleRef = useRef(-1);
   const lastTextRef = useRef<string>("");
 
   useEffect(() => {
@@ -328,6 +330,17 @@ export function Wordmark() {
 
       const newGlow = nextGlow + resolveFlash;
       glowRef.current = newGlow;
+
+      // §3b-B one heartbeat: each wave pulse ripples into the field while
+      // the hero holds the viewport
+      if (sinceFirstWaveGlow >= 0 && dp < 0.5 && !tabHidden.current) {
+        const cycle = Math.floor(sinceFirstWaveGlow / WAVE_INTERVAL);
+        if (cycle !== lastPulseCycleRef.current) {
+          lastPulseCycleRef.current = cycle;
+          const rect = wrapRef.current?.getBoundingClientRect();
+          if (rect) emitPulse(rect.left + rect.width / 2, rect.top + rect.height / 2, now);
+        }
+      }
 
       // Write textShadow directly to DOM
       if (mainPreRef.current) {
