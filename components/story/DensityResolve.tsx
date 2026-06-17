@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInView } from "@/lib/hooks/useInView";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { RESOLVE_CHAR_MS, RESOLVE_SWEEP_MS } from "@/lib/ascii/ramp";
 
-const DENSITY_RAMP = ["█", "▓", "▒", "░"];
+const DENSITY_RAMP = ["8", "5", "=", ":"];
 const RESOLVED = DENSITY_RAMP.length;
 
 interface TextSegment {
@@ -22,8 +23,8 @@ interface Props {
 export function DensityResolve({
   segments,
   className = "",
-  stagger = 50,
-  resolveDuration = 200,
+  stagger = RESOLVE_SWEEP_MS,
+  resolveDuration = RESOLVE_CHAR_MS,
 }: Props) {
   const { ref, inView } = useInView<HTMLParagraphElement>({ threshold: 0.3 });
   const reduced = useReducedMotion();
