@@ -74,13 +74,19 @@ export function coverageNorm(coverage: Float32Array): Float32Array {
   // luminance is strictly increasing, restoring non-decreasing effective
   // ink (norm × coverage) along the ramp repairs the monotonic guarantee
   // without reintroducing the unbounded boost. Only the ramp-ordered prefix
-  // applies — atlas indices past FIELD_RAMP_LEN are flow glyphs.
+  // applies — atlas indices past FIELD_RAMP_LEN are flow glyphs. The floor is
+  // carried across any zero-coverage gap (a non-rendering ramp glyph) so a gap
+  // can't reset it and let the next glyph dip below the ink before the gap.
   const rampEnd = Math.min(coverage.length, FIELD_RAMP_LEN);
-  for (let i = 2; i < rampEnd; i++) {
-    const prevInk = norm[i - 1] * coverage[i - 1];
-    if (coverage[i] > 0 && norm[i] * coverage[i] < prevInk) {
+  let prevInk = 0;
+  for (let i = 1; i < rampEnd; i++) {
+    if (coverage[i] <= 0) continue; // skip gaps, keep the running floor
+    let ink = norm[i] * coverage[i];
+    if (ink < prevInk) {
       norm[i] = prevInk / coverage[i];
+      ink = prevInk;
     }
+    prevInk = ink;
   }
   return norm;
 }

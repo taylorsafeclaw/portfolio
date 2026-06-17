@@ -102,4 +102,24 @@ describe("coverageNorm", () => {
     expect(norm[0]).toBe(1);
     expect(norm[5]).toBe(1);
   });
+
+  it("carries the ink floor across an interior zero-coverage glyph", () => {
+    // a non-rendering glyph mid-ramp must not reset the repair floor — the
+    // thin glyph right after the gap would otherwise dip below the ink before it
+    const coverage = new Float32Array(FIELD_RAMP_LEN);
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) coverage[i] = 0.1 + i * 0.02;
+    coverage[5] = 0; // interior gap
+    coverage[6] = 0.02; // thin glyph immediately after the gap
+    const norm = coverageNorm(coverage);
+    let prevInk = 0;
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      if (coverage[i] <= 0) {
+        expect(norm[i]).toBe(1);
+        continue;
+      }
+      const ink = norm[i] * coverage[i];
+      expect(ink).toBeGreaterThanOrEqual(prevInk - 1e-4); // tolerance > Float32 epsilon
+      prevInk = ink;
+    }
+  });
 });
