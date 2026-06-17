@@ -11,6 +11,19 @@ import {
   introEnvelope,
 } from "@/lib/ascii/field";
 import { AMBIENT_CEIL, ATLAS_BACKSLASH, ATLAS_PIPE } from "@/lib/ascii/ramp";
+import { FieldEngine, type FieldFrameInput } from "@/lib/ascii/field";
+
+function neutralInput(now = 10_000): FieldFrameInput {
+  return {
+    now,
+    introElapsed: Number.POSITIVE_INFINITY,
+    heroDissolve: 1,
+    footerGravity: 0,
+    zones: [],
+    ripples: [],
+    scrollDrift: 0,
+  };
+}
 
 describe("easeFactor", () => {
   it("converges current to target without overshoot", () => {
@@ -93,5 +106,96 @@ describe("flowAtlasIndex", () => {
     expect(flowAtlasIndex(0, 1)).toBe(2); // vertical gradient → "-" (ramp index 2)
     expect(flowAtlasIndex(1, 1)).toBe(4); // down-right gradient → "/" (ramp index 4)
     expect(flowAtlasIndex(1, -1)).toBe(ATLAS_BACKSLASH); // up-right gradient → "\"
+  });
+});
+
+describe("FieldEngine", () => {
+  const make = () => new FieldEngine(40, 20, 7.8, 17.55, 312, 351, false);
+
+  it("ambient targets never exceed the ceiling — letters are ceremony-only (§1)", () => {
+    const e = make();
+    e.recomputeTargets(neutralInput());
+    for (let i = 0; i < e.total; i++) {
+      expect(e.target[i]).toBeLessThanOrEqual(AMBIENT_CEIL);
+      expect(e.target[i]).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("roughly half the field rests at or near space (§3 contrast curve)", () => {
+    const e = make();
+    e.recomputeTargets(neutralInput());
+    let nearEmpty = 0;
+    for (let i = 0; i < e.total; i++) if (e.target[i] < 1) nearEmpty++;
+    expect(nearEmpty / e.total).toBeGreaterThan(0.25);
+  });
+
+  it("ease() converges current toward target", () => {
+    const e = make();
+    e.recomputeTargets(neutralInput());
+    let before = 0;
+    for (let i = 0; i < e.total; i++) before += Math.abs(e.target[i] - e.current[i]);
+    for (let f = 0; f < 30; f++) e.ease(16);
+    let after = 0;
+    for (let i = 0; i < e.total; i++) after += Math.abs(e.target[i] - e.current[i]);
+    expect(after).toBeLessThan(before * 0.2);
+  });
+
+  it("settle() snaps current to target (reduced-motion static frame)", () => {
+    const e = make();
+    e.recomputeTargets(neutralInput());
+    e.settle();
+    for (let i = 0; i < e.total; i++) expect(e.current[i]).toBe(e.target[i]);
+  });
+
+  it("the cursor trail lifts cells toward the dense end (§4)", () => {
+    const e = make();
+    const now = 10_000;
+    e.recomputeTargets(neutralInput(now));
+    const base = e.target.slice();
+    // a short cursor sweep — a wake is many overlapping samples, not one
+    for (let s = 0; s < 6; s++) e.addTrailSample(146 + s * 4, 175, now - s * 16, 0.2);
+    e.recomputeTargets(neutralInput(now));
+    let maxLift = 0;
+    for (let i = 0; i < e.total; i++) maxLift = Math.max(maxLift, e.target[i] - base[i]);
+    expect(maxLift).toBeGreaterThan(2);
+    expect(maxLift).toBeLessThanOrEqual(8.01);
+  });
+
+  it("footer gravity floods the lower viewport (§6)", () => {
+    const e = make();
+    e.recomputeTargets({ ...neutralInput(), footerGravity: 0.75 });
+    const lastRow = (e.rows - 1) * e.cols;
+    for (let c = 0; c < e.cols; c++) {
+      // gravity term alone is 0.75 × ~0.975 × 12 ≈ 8.8 — every bottom cell lifts
+      expect(e.target[lastRow + c]).toBeGreaterThan(8);
+    }
+  });
+
+  it("the final void quiets the field past footerGravity 0.8 (§6)", () => {
+    const e = make();
+    e.recomputeTargets({ ...neutralInput(), footerGravity: 1 });
+    for (let i = 0; i < e.total; i++) expect(e.target[i]).toBe(0);
+  });
+
+  it("a ripple adds a traveling band (§3b)", () => {
+    const e = make();
+    const now = 10_000;
+    e.recomputeTargets(neutralInput(now));
+    const base = e.target.slice();
+    const ripples = [{ x: 156, y: 175, start: now - 300, amp: 4, life: 900, kind: "click" as const }];
+    e.recomputeTargets({ ...neutralInput(now), ripples });
+    let maxLift = 0;
+    for (let i = 0; i < e.total; i++) maxLift = Math.max(maxLift, e.target[i] - base[i]);
+    expect(maxLift).toBeGreaterThan(1);
+  });
+
+  it("flowIndexAt is safe at the grid edges", () => {
+    const e = make();
+    e.recomputeTargets(neutralInput());
+    expect(() => {
+      e.flowIndexAt(0);
+      e.flowIndexAt(e.cols - 1);
+      e.flowIndexAt(e.total - 1);
+    }).not.toThrow();
   });
 });
