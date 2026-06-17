@@ -1,34 +1,5 @@
 // lib/ascii/density.ts
 
-/** Sinusoidal breathing: returns an opacity delta for a cell at time `now` */
-export function breathingAlpha(
-  col: number,
-  row: number,
-  now: number,
-  period: number = 7000,
-): number {
-  const phase = Math.sin((now / period) * Math.PI * 2 + col * 0.15 + row * 0.2);
-  return phase * 0.03;
-}
-
-/** Sparkle: returns a ramp boost (0 or positive) for a cell. Sparse, random. */
-export function sparkleBoost(
-  cellIndex: number,
-  now: number,
-  totalCells: number,
-  rate: number = 2.5,
-): number {
-  if (totalCells <= 0) return 0;
-  const cycle = 400;
-  const slot = Math.floor(now / cycle);
-  const hash = Math.abs((slot * 7919 + cellIndex * 104729) % totalCells);
-  const isSparkle = hash < Math.ceil(rate);
-  if (!isSparkle) return 0;
-  const t = (now % cycle) / cycle;
-  const intensity = t < 0.5 ? t * 2 : (1 - t) * 2;
-  return Math.floor(intensity * 3);
-}
-
 export interface ErosionZone {
   centerX: number;
   centerY: number;

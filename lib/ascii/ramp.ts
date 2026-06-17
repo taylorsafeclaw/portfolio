@@ -90,7 +90,3 @@ export function coverageNorm(coverage: Float32Array): Float32Array {
   }
   return norm;
 }
-
-/** @deprecated Legacy 15-step ramp — deleted in the cleanup task once AsciiGrid is rewritten. */
-export const RAMP = ["·", "-", ":", "/", "+", "=", "<", ">", "!", "?", "░", "▒", "▓", "█", "T"] as const;
-export const RAMP_LEN = RAMP.length;
