@@ -6,17 +6,13 @@ import { FieldEngine, FLOW_MAX, FLOW_MIN } from "@/lib/ascii/field";
 import { getSnapshot } from "@/lib/scroll-store";
 import { emitClick, getRipples } from "@/lib/ascii/pulse-store";
 import { erosionZones } from "@/components/shared/SectionWrapper";
-
-const LINE_HEIGHT = 1.35;
+import { chooseCellMetrics, type FieldProfile } from "@/lib/ascii/profile";
+import { readProfile } from "@/lib/ascii/profile-client";
 
 // §3b-C scroll drag: capped counter-advection, decays back to ambient wind
 const SCROLL_DRIFT_GAIN = 0.4;
 const SCROLL_DRIFT_CAP = 120; // px
 const SCROLL_DRIFT_TAU = 500; // ms
-
-function fontSizeFor(w: number): number {
-  return w < 768 ? 15 : 13; // §7 mobile cell-size increase
-}
 
 function resolveFontStack(): string {
   // canvas can't use var() — resolve the identity font's generated family name (§7)
@@ -76,7 +72,7 @@ interface GridState {
   mountTime: number;
   lastFrame: number;
   frame: number;
-  mobile: boolean;
+  profile: FieldProfile;
   lastPX: number;
   lastPY: number;
   lastPT: number;
@@ -93,17 +89,15 @@ export function AsciiGrid() {
     if (!canvas) return;
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const mobile = w < 768;
-    const dpr = Math.min(mobile ? 1.5 : 2, window.devicePixelRatio || 1); // §8 DPR cap
+    const profile = readProfile();
+    const dpr = Math.min(profile.dprCap, window.devicePixelRatio || 1);
 
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
 
-    const fontSize = fontSizeFor(w);
-    const charW = fontSize * 0.6;
-    const charH = fontSize * LINE_HEIGHT;
+    const { fontSize, charW, charH } = chooseCellMetrics(w, h, profile);
     const cols = Math.ceil(w / charW);
     const rows = Math.ceil(h / charH);
 
@@ -115,7 +109,7 @@ export function AsciiGrid() {
 
     const prev = stateRef.current;
     stateRef.current = {
-      engine: new FieldEngine(cols, rows, charW, charH, w, h, mobile ? 2 : 3),
+      engine: new FieldEngine(cols, rows, charW, charH, w, h, profile.octaves),
       cols,
       rows,
       charW,
@@ -128,7 +122,7 @@ export function AsciiGrid() {
       mountTime: prev?.mountTime ?? performance.now(),
       lastFrame: performance.now(),
       frame: 0,
-      mobile,
+      profile,
       lastPX: prev?.lastPX ?? -1e9,
       lastPY: prev?.lastPY ?? -1e9,
       lastPT: prev?.lastPT ?? 0,
@@ -219,7 +213,7 @@ export function AsciiGrid() {
       s.scrollDrift *= Math.exp(-dt / SCROLL_DRIFT_TAU);
 
       // §8: expensive target pass at 30/20Hz, easing + draw every frame
-      if (s.frame % (s.mobile ? 3 : 2) === 0) recompute(now);
+      if (s.frame % s.profile.recomputeEvery === 0) recompute(now);
       s.engine.ease(dt);
       drawFrame();
       s.raf = requestAnimationFrame(loop);
@@ -227,7 +221,7 @@ export function AsciiGrid() {
 
     const onPointerMove = (e: PointerEvent) => {
       const s = stateRef.current;
-      if (!s || e.pointerType !== "mouse" || s.mobile) return; // trail is desktop-only (§4)
+      if (!s || e.pointerType !== "mouse") return; // mouse wake only; touch-move is scroll
       const now = performance.now();
       const dx = e.clientX - s.lastPX;
       const dy = e.clientY - s.lastPY;
@@ -243,10 +237,13 @@ export function AsciiGrid() {
       const s = stateRef.current;
       if (!s) return;
       const now = performance.now();
-      if (e.pointerType === "mouse" && !s.mobile) {
+      s.lastPX = e.clientX;
+      s.lastPY = e.clientY;
+      s.lastPT = now;
+      if (e.pointerType === "mouse") {
         emitClick(e.clientX, e.clientY, now); // §3b-C: touch the ink
       } else {
-        s.engine.addTrailSample(e.clientX, e.clientY, now, 0); // tap halo (§4)
+        s.engine.addTrailSample(e.clientX, e.clientY, now, 0); // touch/pen tap halo (§4)
       }
     };
 
