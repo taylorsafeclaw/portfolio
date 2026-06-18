@@ -73,6 +73,7 @@ interface GridState {
   lastFrame: number;
   frame: number;
   profile: FieldProfile;
+  lastW: number;
   lastPX: number;
   lastPY: number;
   lastPT: number;
@@ -128,6 +129,7 @@ export function AsciiGrid() {
       lastPT: prev?.lastPT ?? 0,
       scrollDrift: prev?.scrollDrift ?? 0,
       lastScrollY: window.scrollY,
+      lastW: w,
     };
   }, []);
 
@@ -269,8 +271,18 @@ export function AsciiGrid() {
     const onResize = () => {
       if (resizeTimer !== undefined) clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
-        resize();
         resizeTimer = undefined;
+        const s = stateRef.current;
+        const w = window.innerWidth;
+        const dprNow = Math.min(s ? s.profile.dprCap : 2, window.devicePixelRatio || 1);
+        // iOS Safari fires resize when the URL bar shows/hides — a height-only
+        // change. Rebuilding (new engine + atlas) mid-scroll causes jank and a
+        // visible field reset, so rebuild only when width or DPR actually
+        // changes. A height-only delta is ignored; the canvas keeps its size
+        // (a faint unfilled strip at the very bottom when the toolbar collapses
+        // is imperceptible at the field's opacity).
+        if (s && w === s.lastW && dprNow === s.dpr) return;
+        resize();
         if (reduced) staticFrame();
       }, 150);
     };
