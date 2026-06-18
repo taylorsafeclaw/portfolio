@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { ATLAS_GLYPHS, ATLAS_LEN, coverageNorm, luminance } from "@/lib/ascii/ramp";
-import { FieldEngine, FLOW_MAX, FLOW_MIN } from "@/lib/ascii/field";
+import { FieldEngine, FLOW_MAX, FLOW_MIN, INTRO_RECEDE_END } from "@/lib/ascii/field";
 import { getSnapshot } from "@/lib/scroll-store";
 import { emitClick, getRipples } from "@/lib/ascii/pulse-store";
 import { erosionZones } from "@/components/shared/SectionWrapper";
@@ -13,6 +13,12 @@ import { readProfile } from "@/lib/ascii/profile-client";
 const SCROLL_DRIFT_GAIN = 0.4;
 const SCROLL_DRIFT_CAP = 120; // px
 const SCROLL_DRIFT_TAU = 500; // ms
+
+// §idle: when nothing is animating, drop work to ~15fps (the ambient morph
+// period is 60s — imperceptible) to save battery/thermal. Any input wakes it
+// the same frame, because scroll/pointer state is read before the idle gate.
+const IDLE_FRAME_MS = 1000 / 15;
+const SCROLL_DRIFT_EPS = 0.5;
 
 function resolveFontStack(): string {
   // canvas can't use var() — resolve the identity font's generated family name (§7)
@@ -201,10 +207,9 @@ export function AsciiGrid() {
       const s = stateRef.current;
       if (!s || s.paused) return;
       const dt = Math.min(100, Math.max(0.01, now - s.lastFrame));
-      s.lastFrame = now;
-      s.frame++;
 
-      // §3b-C: scrolling reads as moving through the medium
+      // §3b-C: scrolling reads as moving through the medium (every frame, so
+      // a scroll wakes the field instantly even from the idle state)
       const sy = window.scrollY;
       const dScroll = sy - s.lastScrollY;
       s.lastScrollY = sy;
@@ -214,7 +219,27 @@ export function AsciiGrid() {
       );
       s.scrollDrift *= Math.exp(-dt / SCROLL_DRIFT_TAU);
 
-      // §8: expensive target pass at 30/20Hz, easing + draw every frame
+      const scroll = getSnapshot();
+      const active =
+        now - s.mountTime < INTRO_RECEDE_END ||
+        dScroll !== 0 ||
+        Math.abs(s.scrollDrift) > SCROLL_DRIFT_EPS ||
+        (scroll.heroDissolve > 0 && scroll.heroDissolve < 1) ||
+        scroll.footerGravity > 0 ||
+        (s.lastPX > -1e8 && now - s.lastPT < 1200) ||
+        getRipples(now).length > 0 ||
+        erosionZones.some((z) => z.progress > 0 && z.progress < 1);
+
+      // idle: keep the rAF alive but only do work every IDLE_FRAME_MS
+      if (!active && now - s.lastFrame < IDLE_FRAME_MS) {
+        s.raf = requestAnimationFrame(loop);
+        return;
+      }
+
+      s.lastFrame = now;
+      s.frame++;
+
+      // §8: expensive target pass at the profile cadence, easing + draw per work-frame
       if (s.frame % s.profile.recomputeEvery === 0) recompute(now);
       s.engine.ease(dt);
       drawFrame();
