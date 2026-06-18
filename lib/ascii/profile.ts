@@ -65,3 +65,21 @@ export function detectProfile(env: DetectEnv): FieldProfile {
   if (weak && profile.name === "tablet") return HANDHELD;
   return profile;
 }
+
+const FONT_MAX = 32; // px; clamp so absurd displays don't grow glyphs without bound
+const CELL_ASPECT = 0.6 * 1.35; // charW = fontSize*0.6, charH = fontSize*1.35 → 0.81
+
+/**
+ * Grow the glyph cell size just enough to keep cols*rows <= profile.cellBudget.
+ * On normal viewports returns the base size unchanged (laptop/phone identical);
+ * on large viewports the cells grow, staying crisp and on the shared lattice.
+ */
+export function chooseCellMetrics(
+  vw: number,
+  vh: number,
+  profile: FieldProfile,
+): { fontSize: number; charW: number; charH: number } {
+  const needed = Math.ceil(Math.sqrt((vw * vh) / (CELL_ASPECT * profile.cellBudget)));
+  const fontSize = Math.min(FONT_MAX, Math.max(profile.baseCellPx, needed));
+  return { fontSize, charW: fontSize * 0.6, charH: fontSize * 1.35 };
+}

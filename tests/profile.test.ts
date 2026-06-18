@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectProfile, type DetectEnv } from "@/lib/ascii/profile";
+import { detectProfile, chooseCellMetrics, type DetectEnv } from "@/lib/ascii/profile";
 
 const desktopEnv: DetectEnv = { pointerCoarse: false, hover: true, vw: 1440, vh: 900 };
 const coarse = (over: Partial<DetectEnv>): DetectEnv => ({
@@ -31,5 +31,36 @@ describe("detectProfile", () => {
   });
   it("missing power hints are never required", () => {
     expect(detectProfile(coarse({ vw: 1024, vh: 1366 })).name).toBe("tablet");
+  });
+});
+
+describe("chooseCellMetrics", () => {
+  const desktop = detectProfile(desktopEnv);
+  const handheld = detectProfile(coarse({ vw: 390, vh: 844 }));
+  const cellsFor = (vw: number, vh: number, p = desktop) => {
+    const m = chooseCellMetrics(vw, vh, p);
+    return Math.ceil(vw / m.charW) * Math.ceil(vh / m.charH);
+  };
+
+  it("laptop keeps the base cell size (unchanged look)", () => {
+    expect(chooseCellMetrics(1440, 900, desktop).fontSize).toBe(desktop.baseCellPx);
+  });
+  it("phone keeps the base cell size (unchanged look)", () => {
+    expect(chooseCellMetrics(390, 844, handheld).fontSize).toBe(handheld.baseCellPx);
+  });
+  it("2560 monitor caps cells at or under the desktop budget", () => {
+    expect(chooseCellMetrics(2560, 1440, desktop).fontSize).toBeGreaterThan(desktop.baseCellPx);
+    expect(cellsFor(2560, 1440)).toBeLessThanOrEqual(desktop.cellBudget);
+  });
+  it("4K caps cells at or under the desktop budget", () => {
+    expect(cellsFor(3840, 2160)).toBeLessThanOrEqual(desktop.cellBudget);
+  });
+  it("never grows past FONT_MAX (32)", () => {
+    expect(chooseCellMetrics(7680, 4320, desktop).fontSize).toBeLessThanOrEqual(32);
+  });
+  it("charW/charH track fontSize (0.6 / 1.35)", () => {
+    const m = chooseCellMetrics(2560, 1440, desktop);
+    expect(m.charW).toBeCloseTo(m.fontSize * 0.6);
+    expect(m.charH).toBeCloseTo(m.fontSize * 1.35);
   });
 });
