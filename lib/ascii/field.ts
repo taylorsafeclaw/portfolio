@@ -201,7 +201,7 @@ export class FieldEngine {
     charH: number,
     vw: number,
     vh: number,
-    mobile: boolean,
+    octaves: number,
     seed = 1337,
   ) {
     this.cols = cols;
@@ -211,7 +211,7 @@ export class FieldEngine {
     this.charH = charH;
     this.vw = vw;
     this.vh = vh;
-    this.octaves = mobile ? 2 : 3; // §8: mobile drops an octave and the warp
+    this.octaves = octaves; // 3 = desktop (warp on, see noise.ts); 2 = light
     this.noiseScale = 1 / Math.max(1, FEATURE_SCALE * Math.min(vw, vh));
     this.perm = buildPerm(seed);
     this.target = new Float32Array(this.total);

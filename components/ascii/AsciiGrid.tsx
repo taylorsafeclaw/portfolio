@@ -115,7 +115,7 @@ export function AsciiGrid() {
 
     const prev = stateRef.current;
     stateRef.current = {
-      engine: new FieldEngine(cols, rows, charW, charH, w, h, mobile),
+      engine: new FieldEngine(cols, rows, charW, charH, w, h, mobile ? 2 : 3),
       cols,
       rows,
       charW,

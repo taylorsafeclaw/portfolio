@@ -110,7 +110,7 @@ describe("flowAtlasIndex", () => {
 });
 
 describe("FieldEngine", () => {
-  const make = () => new FieldEngine(40, 20, 7.8, 17.55, 312, 351, false);
+  const make = () => new FieldEngine(40, 20, 7.8, 17.55, 312, 351, 3);
 
   it("ambient targets never exceed the ceiling — letters are ceremony-only (§1)", () => {
     const e = make();
