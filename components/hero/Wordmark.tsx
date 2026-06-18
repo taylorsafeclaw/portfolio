@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { getSnapshot as getScrollSnapshot } from "@/lib/scroll-store";
 import { emitPulse } from "@/lib/ascii/pulse-store";
+import { readProfile } from "@/lib/ascii/profile-client";
 
 const WORDMARK_RAMP = ["·", "░", "▒", "▓", "█"] as const;
 type Ramp = (typeof WORDMARK_RAMP)[number];
@@ -201,13 +202,13 @@ export function Wordmark() {
 
     const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
 
-    // Mobile: cap at 30fps by skipping every other frame
-    const isMobile = window.innerWidth < 768;
+    // Low-power devices: cap the wave loop at 30fps by skipping every other frame
+    const isLowPower = readProfile().lowPowerHint;
     let frameSkip = false;
 
     const tick = (now: number) => {
-      // 30fps cap on mobile
-      if (isMobile) {
+      // 30fps cap on low-power devices
+      if (isLowPower) {
         frameSkip = !frameSkip;
         if (frameSkip) {
           rafRef.current = requestAnimationFrame(tick);
