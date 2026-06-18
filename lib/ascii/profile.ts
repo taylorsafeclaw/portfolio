@@ -66,6 +66,9 @@ export function detectProfile(env: DetectEnv): FieldProfile {
   return profile;
 }
 
+// FONT_MAX bounds glyph size so huge displays don't get absurd characters.
+// Below ~5K the cell budget holds exactly; at 8K+ the clamp wins and the
+// budget becomes best-effort (out of the ≤4K target range).
 const FONT_MAX = 32; // px; clamp so absurd displays don't grow glyphs without bound
 const CELL_ASPECT = 0.6 * 1.35; // charW = fontSize*0.6, charH = fontSize*1.35 → 0.81
 

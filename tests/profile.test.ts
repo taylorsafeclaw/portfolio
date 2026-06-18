@@ -53,6 +53,7 @@ describe("chooseCellMetrics", () => {
     expect(cellsFor(2560, 1440)).toBeLessThanOrEqual(desktop.cellBudget);
   });
   it("4K caps cells at or under the desktop budget", () => {
+    expect(chooseCellMetrics(3840, 2160, desktop).fontSize).toBeGreaterThan(desktop.baseCellPx);
     expect(cellsFor(3840, 2160)).toBeLessThanOrEqual(desktop.cellBudget);
   });
   it("never grows past FONT_MAX (32)", () => {
