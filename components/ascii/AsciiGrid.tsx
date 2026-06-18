@@ -225,7 +225,7 @@ export function AsciiGrid() {
         dScroll !== 0 ||
         Math.abs(s.scrollDrift) > SCROLL_DRIFT_EPS ||
         (scroll.heroDissolve > 0 && scroll.heroDissolve < 1) ||
-        scroll.footerGravity > 0 ||
+        (scroll.footerGravity > 0 && scroll.footerGravity < 1) ||
         (s.lastPX > -1e8 && now - s.lastPT < 1200) ||
         getRipples(now).length > 0 ||
         erosionZones.some((z) => z.progress > 0 && z.progress < 1);

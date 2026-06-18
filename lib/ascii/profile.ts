@@ -50,6 +50,8 @@ const HANDHELD_MAX_SHORT_SIDE = 520; // px; a coarse pointer below this is a pho
  * budget already bounds its cost.
  */
 export function detectProfile(env: DetectEnv): FieldProfile {
+  // A coarse primary pointer — or a device that cannot hover (touch/stylus) —
+  // is treated as touch-first for quality selection.
   const touchPrimary = env.pointerCoarse || !env.hover;
   let profile: FieldProfile;
   if (!touchPrimary) {
