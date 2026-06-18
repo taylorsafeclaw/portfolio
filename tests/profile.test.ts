@@ -22,6 +22,9 @@ describe("detectProfile", () => {
   it("weak tablet (≤4 cores) demotes to handheld", () => {
     expect(detectProfile(coarse({ vw: 1024, vh: 1366, cores: 4 })).name).toBe("handheld");
   });
+  it("weak tablet (≤4 GB memory) demotes to handheld", () => {
+    expect(detectProfile(coarse({ vw: 1024, vh: 1366, deviceMemory: 4 })).name).toBe("handheld");
+  });
   it("desktop is never demoted by low cores (keeps the warp)", () => {
     expect(detectProfile({ ...desktopEnv, cores: 2 }).name).toBe("desktop");
     expect(detectProfile({ ...desktopEnv, cores: 2 }).octaves).toBeGreaterThanOrEqual(3);
