@@ -1,64 +1,90 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import { RAMP, RAMP_LEN } from "@/lib/ascii/ramp";
+import { useCallback, useEffect, useRef } from "react";
+import { ATLAS_GLYPHS, ATLAS_LEN, coverageNorm, luminance } from "@/lib/ascii/ramp";
+import { FieldEngine, FLOW_MAX, FLOW_MIN, INTRO_RECEDE_END } from "@/lib/ascii/field";
 import { getSnapshot } from "@/lib/scroll-store";
-import { IntroEngine, INTRO_DURATION } from "@/lib/ascii/intro";
-import { breathingAlpha, sparkleBoost, erosionAlpha } from "@/lib/ascii/density";
+import { emitClick, getRipples } from "@/lib/ascii/pulse-store";
 import { erosionZones } from "@/components/shared/SectionWrapper";
+import { chooseCellMetrics, type FieldProfile } from "@/lib/ascii/profile";
+import { readProfile } from "@/lib/ascii/profile-client";
 
-const FONT_SIZE = 13;
-const LINE_HEIGHT = 1.35;
-const CHURN_COUNT = 12;
-const CHURN_MS = 300;
-const LIGHT_BIAS = [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4];
+// §3b-C scroll drag: capped counter-advection, decays back to ambient wind
+const SCROLL_DRIFT_GAIN = 0.4;
+const SCROLL_DRIFT_CAP = 120; // px
+const SCROLL_DRIFT_TAU = 500; // ms
 
-// Mouse proximity: local ramp shift (Aino-style)
-const HALO_RADIUS = 140;
-const HALO_BOOST = 4;
+// §idle: when nothing is animating, drop work to ~15fps (the ambient morph
+// period is 60s — imperceptible) to save battery/thermal. Any input wakes it
+// the same frame, because scroll/pointer state is read before the idle gate.
+const IDLE_FRAME_MS = 1000 / 15;
+const SCROLL_DRIFT_EPS = 0.5;
 
-const FONT_STR = `${FONT_SIZE}px ui-monospace, "SF Mono", Menlo, monospace`;
-
-function buildGlyphAtlas(charW: number, charH: number, dpr: number): HTMLCanvasElement {
-  const glyphWPx = Math.ceil(charW * dpr);
-  const glyphHPx = Math.ceil(charH * dpr);
-  const atlas = document.createElement("canvas");
-  atlas.width = glyphWPx * RAMP_LEN;
-  atlas.height = glyphHPx;
-  const actx = atlas.getContext("2d")!;
-  actx.scale(dpr, dpr);
-  actx.font = FONT_STR;
-  actx.textBaseline = "top";
-  actx.fillStyle = "rgb(200, 198, 194)";
-  for (let i = 0; i < RAMP_LEN; i++) {
-    actx.fillText(RAMP[i], i * charW, 0);
-  }
-  return atlas;
+function resolveFontStack(): string {
+  // canvas can't use var() — resolve the identity font's generated family name (§7)
+  const fam = getComputedStyle(document.documentElement).getPropertyValue("--font-mono").trim();
+  return `${fam ? `${fam}, ` : ""}ui-monospace, "SF Mono", Menlo, monospace`;
 }
 
-function getReducedMotion(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+interface AtlasBundle {
+  canvas: HTMLCanvasElement;
+  covNorm: Float32Array;
+  glyphWPx: number;
+  glyphHPx: number;
+}
+
+function buildAtlas(fontSize: number, charW: number, charH: number, dpr: number): AtlasBundle {
+  const glyphWPx = Math.ceil(charW * dpr);
+  const glyphHPx = Math.ceil(charH * dpr);
+  const canvas = document.createElement("canvas");
+  canvas.width = glyphWPx * ATLAS_LEN;
+  canvas.height = glyphHPx;
+  const actx = canvas.getContext("2d", { willReadFrequently: true })!;
+  actx.font = `${fontSize}px ${resolveFontStack()}`;
+  actx.textBaseline = "top";
+  actx.fillStyle = "rgb(200, 198, 194)";
+  for (let g = 1; g < ATLAS_LEN; g++) {
+    // per-glyph transform pins each glyph to its integer-px slot — no drift
+    actx.setTransform(dpr, 0, 0, dpr, g * glyphWPx, 0);
+    actx.fillText(ATLAS_GLYPHS[g], 0, (charH - fontSize) / 2);
+  }
+  actx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // measure per-glyph ink coverage from the atlas pixels (§1)
+  const coverage = new Float32Array(ATLAS_LEN);
+  const img = actx.getImageData(0, 0, canvas.width, canvas.height).data;
+  for (let g = 1; g < ATLAS_LEN; g++) {
+    let sum = 0;
+    for (let y = 0; y < glyphHPx; y++) {
+      let off = (y * canvas.width + g * glyphWPx) * 4 + 3;
+      for (let x = 0; x < glyphWPx; x++, off += 4) sum += img[off];
+    }
+    coverage[g] = sum / (glyphWPx * glyphHPx * 255);
+  }
+  return { canvas, covNorm: coverageNorm(coverage), glyphWPx, glyphHPx };
 }
 
 interface GridState {
+  engine: FieldEngine;
   cols: number;
   rows: number;
-  buffer: Uint8Array;
-  mouseX: number;
-  mouseY: number;
-  mouseActive: boolean;
+  charW: number;
+  charH: number;
+  fontSize: number;
+  atlas: AtlasBundle;
+  dpr: number;
   raf: number;
-  churnTimer: number | undefined;
   paused: boolean;
   mountTime: number;
-  introEngine: IntroEngine | null;
-  introSeeded: boolean;
-  vh: number;
-  atlas: HTMLCanvasElement | null;
-  glyphWPx: number;
-  glyphHPx: number;
-  dpr: number;
+  lastFrame: number;
+  frame: number;
+  profile: FieldProfile;
+  lastW: number;
+  lastPX: number;
+  lastPY: number;
+  lastPT: number;
+  scrollDrift: number;
+  lastScrollY: number;
 }
 
 export function AsciiGrid() {
@@ -68,56 +94,48 @@ export function AsciiGrid() {
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const dpr = window.innerWidth < 768
-      ? Math.min(1.5, window.devicePixelRatio || 1)
-      : Math.min(2, window.devicePixelRatio || 1);
     const w = window.innerWidth;
     const h = window.innerHeight;
+    const profile = readProfile();
+    const dpr = Math.min(profile.dprCap, window.devicePixelRatio || 1);
 
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
 
-    const charW = FONT_SIZE * 0.6;
-    const charH = FONT_SIZE * LINE_HEIGHT;
+    const { fontSize, charW, charH } = chooseCellMetrics(w, h, profile);
     const cols = Math.ceil(w / charW);
     const rows = Math.ceil(h / charH);
-    const total = cols * rows;
 
-    const buffer = new Uint8Array(total);
-    for (let i = 0; i < total; i++) {
-      buffer[i] = LIGHT_BIAS[Math.floor(Math.random() * LIGHT_BIAS.length)];
-    }
-
+    // grid discipline (§6c): DOM content and field cells share one lattice
     document.documentElement.style.setProperty("--ascii-cols", String(cols));
     document.documentElement.style.setProperty("--ascii-rows", String(rows));
     document.documentElement.style.setProperty("--ascii-ch", `${charW}px`);
     document.documentElement.style.setProperty("--ascii-line", `${charH}px`);
 
     const prev = stateRef.current;
-    const centerCol = cols / 2;
-    const centerRow = rows / 2;
-
     stateRef.current = {
+      engine: new FieldEngine(cols, rows, charW, charH, w, h, profile.octaves),
       cols,
       rows,
-      buffer,
-      mouseX: prev?.mouseX ?? -9999,
-      mouseY: prev?.mouseY ?? -9999,
-      mouseActive: prev?.mouseActive ?? false,
-      raf: 0,
-      churnTimer: undefined,
+      charW,
+      charH,
+      fontSize,
+      atlas: buildAtlas(fontSize, charW, charH, dpr),
+      dpr,
+      raf: prev?.raf ?? 0,
       paused: prev?.paused ?? false,
       mountTime: prev?.mountTime ?? performance.now(),
-      introEngine: prev?.introEngine ?? new IntroEngine(cols, rows, centerCol, centerRow, charW, charH),
-      introSeeded: prev?.introSeeded ?? false,
-      vh: h,
-      atlas: buildGlyphAtlas(charW, charH, dpr),
-      glyphWPx: Math.ceil(charW * dpr),
-      glyphHPx: Math.ceil(charH * dpr),
-      dpr,
+      lastFrame: performance.now(),
+      frame: 0,
+      profile,
+      lastPX: prev?.lastPX ?? -1e9,
+      lastPY: prev?.lastPY ?? -1e9,
+      lastPT: prev?.lastPT ?? 0,
+      scrollDrift: prev?.scrollDrift ?? 0,
+      lastScrollY: window.scrollY,
+      lastW: w,
     };
   }, []);
 
@@ -126,252 +144,213 @@ export function AsciiGrid() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    const reduced = getReducedMotion();
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     resize();
 
-    const mountTime = stateRef.current!.mountTime;
-
-    const draw = (now: number) => {
-      const state = stateRef.current;
-      if (!state) return;
-
-      const { cols, rows, buffer, mouseX, mouseY, mouseActive, introEngine, vh, atlas, glyphWPx, glyphHPx, dpr } = state;
-      if (!atlas) return;
-      const charW = FONT_SIZE * 0.6;
-      const charH = FONT_SIZE * LINE_HEIGHT;
-      const scroll = getSnapshot();
-      const elapsed = now - mountTime;
-      const introActive = elapsed < INTRO_DURATION && !reduced && introEngine;
-
+    const drawFrame = () => {
+      const s = stateRef.current;
+      if (!s) return;
+      const { engine, atlas, cols, rows, charW, charH, dpr } = s;
+      const cur = engine.current;
+      const cov = atlas.covNorm;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-
-      if (!introActive && introEngine && !state.introSeeded) {
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            const result = introEngine.getRamp(c, r, INTRO_DURATION - 1);
-            if (result) state.buffer[r * cols + c] = result.rampIdx;
+      for (let row = 0; row < rows; row++) {
+        const y = row * charH;
+        for (let col = 0; col < cols; col++) {
+          const i = row * cols + col;
+          const c = cur[i];
+          const idx = Math.round(c);
+          if (idx <= 0) continue; // sparse field: skip-draw (§8)
+          let atlasIdx = idx;
+          if (idx >= FLOW_MIN && idx <= FLOW_MAX) {
+            // §3b-A: mid-band cells render as flow-aligned strokes
+            const f = engine.flowIndexAt(i);
+            if (f >= 0) atlasIdx = f;
           }
-        }
-        state.introSeeded = true;
-      }
-
-      // Compute per-frame constants outside the cell loop
-      const total = cols * rows;
-      const sparkleRate = window.innerWidth < 768 ? 2 : 2.5;
-      const vw = canvas.width / dpr;
-      const vh2 = canvas.height / dpr;
-
-      const isMobile = window.innerWidth < 768;
-      let haloColMin = 0, haloColMax = -1, haloRowMin = 0, haloRowMax = -1;
-      if (mouseActive && !isMobile) {
-        const haloColR = Math.ceil(HALO_RADIUS / charW);
-        const haloRowR = Math.ceil(HALO_RADIUS / charH);
-        const mc = Math.floor(mouseX / charW);
-        const mr = Math.floor(mouseY / charH);
-        haloColMin = Math.max(0, mc - haloColR);
-        haloColMax = Math.min(cols - 1, mc + haloColR);
-        haloRowMin = Math.max(0, mr - haloRowR);
-        haloRowMax = Math.min(rows - 1, mr + haloRowR);
-      }
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const idx = r * cols + c;
-          const x = c * charW;
-          const y = r * charH;
-
-          let drawIdx: number;
-          let alpha: number;
-
-          if (introActive) {
-            const result = introEngine.getRamp(c, r, elapsed);
-            if (!result) continue;
-            drawIdx = result.rampIdx;
-            alpha = result.alpha;
-          } else {
-            // Normal ambient mode
-            const baseIdx = buffer[idx];
-            const viewportNorm = y / vh;
-            // Reduced base alpha for site-wide field (~8-10% vs hero's 18%)
-            alpha = 0.06 + (baseIdx / RAMP_LEN) * 0.08;
-            drawIdx = baseIdx;
-
-            // Breathing wave from density module
-            alpha += breathingAlpha(c, r, now);
-
-            // Sparkle: random brief density boost for a cell
-            const sparkle = sparkleBoost(idx, now, total, sparkleRate);
-            drawIdx = Math.min(RAMP_LEN - 1, drawIdx + sparkle);
-
-            // Hero area: blend field into background; restore full intensity past hero
-            alpha *= 0.5 + scroll.heroDissolve * 0.5;
-
-            // Section divider: density band during scroll transition
-            if (scroll.heroDissolve > 0.3 && scroll.heroDissolve < 1.0) {
-              const bandCenter = 0.5;
-              const bandHeight = 0.08;
-              const distFromBand = Math.abs(viewportNorm - bandCenter);
-              if (distFromBand < bandHeight) {
-                const bandIntensity = 1 - distFromBand / bandHeight;
-                const scrollFade =
-                  scroll.heroDissolve < 0.5
-                    ? (scroll.heroDissolve - 0.3) / 0.2
-                    : 1 - (scroll.heroDissolve - 0.8) / 0.2;
-                const clampedFade = Math.max(0, Math.min(1, scrollFade));
-                const colNorm = c / Math.max(1, cols - 1);
-                const colIntensity = 1 - Math.abs(colNorm - 0.5) * 2;
-                const boost = bandIntensity * clampedFade * colIntensity;
-                drawIdx = Math.min(RAMP_LEN - 2, drawIdx + Math.floor(boost * 5));
-                alpha += boost * 0.15;
-              }
-            }
-
-            // Footer gravity: lower cells densify
-            if (scroll.footerGravity > 0) {
-              const gravityBoost = scroll.footerGravity * viewportNorm * 4;
-              drawIdx = Math.min(RAMP_LEN - 2, drawIdx + Math.floor(gravityBoost));
-              alpha += scroll.footerGravity * viewportNorm * 0.2;
-            }
-
-            // Final void at page bottom
-            if (scroll.footerGravity > 0.8) {
-              alpha *= Math.max(0, 1 - (scroll.footerGravity - 0.8) / 0.2);
-            }
-          }
-
-          // Mouse proximity: local ramp shift (Aino-style) — desktop only
-          if (mouseActive && !isMobile && r >= haloRowMin && r <= haloRowMax && c >= haloColMin && c <= haloColMax) {
-            const mdx = x + charW / 2 - mouseX;
-            const mdy = y + charH / 2 - mouseY;
-            const d = Math.sqrt(mdx * mdx + mdy * mdy);
-            if (d < HALO_RADIUS) {
-              const proximity = 1 - d / HALO_RADIUS;
-              const boost = proximity * proximity * HALO_BOOST;
-              drawIdx = Math.min(RAMP_LEN - 2, drawIdx + Math.floor(boost));
-              alpha += proximity * 0.2;
-            }
-          }
-
-          // Erosion zones: dim ASCII field around visible content sections
-          if (!introActive && erosionZones.length > 0) {
-            alpha *= erosionAlpha(x, y, vw, vh2, erosionZones);
-          }
-
-          drawIdx = Math.min(RAMP_LEN - 1, Math.max(0, drawIdx));
-          alpha = Math.min(1, Math.max(0, alpha));
+          const alpha = luminance(c) * cov[atlasIdx];
           if (alpha < 0.01) continue;
-
-          ctx.globalAlpha = alpha;
-          ctx.drawImage(atlas, drawIdx * glyphWPx, 0, glyphWPx, glyphHPx, x, y, charW, charH);
+          ctx.globalAlpha = Math.min(1, alpha);
+          ctx.drawImage(
+            atlas.canvas,
+            atlasIdx * atlas.glyphWPx,
+            0,
+            atlas.glyphWPx,
+            atlas.glyphHPx,
+            col * charW,
+            y,
+            charW,
+            charH,
+          );
         }
       }
-      ctx.globalAlpha = 1.0;
+      ctx.globalAlpha = 1;
+    };
+
+    const recompute = (now: number) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const scroll = getSnapshot();
+      s.engine.recomputeTargets({
+        now,
+        introElapsed: reduced ? Number.POSITIVE_INFINITY : now - s.mountTime,
+        heroDissolve: scroll.heroDissolve,
+        footerGravity: scroll.footerGravity,
+        zones: erosionZones,
+        ripples: getRipples(now),
+        scrollDrift: s.scrollDrift,
+      });
     };
 
     const loop = (now: number) => {
-      const state = stateRef.current;
-      if (!state || state.paused) return;
-      draw(now);
-      state.raf = requestAnimationFrame(loop);
-    };
+      const s = stateRef.current;
+      if (!s || s.paused) return;
+      const dt = Math.min(100, Math.max(0.01, now - s.lastFrame));
 
-    const onMove = (e: MouseEvent) => {
-      if (stateRef.current) {
-        stateRef.current.mouseX = e.clientX;
-        stateRef.current.mouseY = e.clientY;
-        stateRef.current.mouseActive = true;
+      // §3b-C: scrolling reads as moving through the medium (every frame, so
+      // a scroll wakes the field instantly even from the idle state)
+      const sy = window.scrollY;
+      const dScroll = sy - s.lastScrollY;
+      s.lastScrollY = sy;
+      s.scrollDrift = Math.max(
+        -SCROLL_DRIFT_CAP,
+        Math.min(SCROLL_DRIFT_CAP, s.scrollDrift + dScroll * SCROLL_DRIFT_GAIN),
+      );
+      s.scrollDrift *= Math.exp(-dt / SCROLL_DRIFT_TAU);
+
+      const scroll = getSnapshot();
+      const active =
+        now - s.mountTime < INTRO_RECEDE_END ||
+        dScroll !== 0 ||
+        Math.abs(s.scrollDrift) > SCROLL_DRIFT_EPS ||
+        (scroll.heroDissolve > 0 && scroll.heroDissolve < 1) ||
+        (scroll.footerGravity > 0 && scroll.footerGravity < 1) ||
+        (s.lastPX > -1e8 && now - s.lastPT < 1200) ||
+        getRipples(now).length > 0 ||
+        erosionZones.some((z) => z.progress > 0 && z.progress < 1);
+
+      // idle: keep the rAF alive but only do work every IDLE_FRAME_MS
+      if (!active && now - s.lastFrame < IDLE_FRAME_MS) {
+        s.raf = requestAnimationFrame(loop);
+        return;
       }
+
+      s.lastFrame = now;
+      s.frame++;
+
+      // §8: expensive target pass at the profile cadence, easing + draw per work-frame
+      if (s.frame % s.profile.recomputeEvery === 0) recompute(now);
+      s.engine.ease(dt);
+      drawFrame();
+      s.raf = requestAnimationFrame(loop);
     };
 
-    const onTouch = (e: TouchEvent) => {
-      if (stateRef.current && e.touches.length > 0) {
-        stateRef.current.mouseX = e.touches[0].clientX;
-        stateRef.current.mouseY = e.touches[0].clientY;
-        stateRef.current.mouseActive = true;
+    const onPointerMove = (e: PointerEvent) => {
+      const s = stateRef.current;
+      if (!s || e.pointerType !== "mouse") return; // mouse wake only; touch-move is scroll
+      const now = performance.now();
+      const dx = e.clientX - s.lastPX;
+      const dy = e.clientY - s.lastPY;
+      const dtp = Math.max(1, now - s.lastPT);
+      const speed = s.lastPX < -1e8 ? 0 : Math.sqrt(dx * dx + dy * dy) / dtp;
+      s.lastPX = e.clientX;
+      s.lastPY = e.clientY;
+      s.lastPT = now;
+      s.engine.addTrailSample(e.clientX, e.clientY, now, speed);
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const now = performance.now();
+      s.lastPX = e.clientX;
+      s.lastPY = e.clientY;
+      s.lastPT = now;
+      if (e.pointerType === "mouse") {
+        emitClick(e.clientX, e.clientY, now); // §3b-C: touch the ink
+      } else {
+        s.engine.addTrailSample(e.clientX, e.clientY, now, 0); // touch/pen tap halo (§4)
       }
-    };
-
-    const onTouchEnd = () => {
-      if (stateRef.current) {
-        setTimeout(() => {
-          if (stateRef.current) stateRef.current.mouseActive = false;
-        }, 600);
-      }
-    };
-
-    const onLeave = () => {
-      if (stateRef.current) stateRef.current.mouseActive = false;
     };
 
     const onVisibility = () => {
-      if (stateRef.current) {
-        stateRef.current.paused = document.hidden;
-        if (!document.hidden) {
-          stateRef.current.raf = requestAnimationFrame(loop);
-        }
+      const s = stateRef.current;
+      if (!s) return;
+      s.paused = document.hidden;
+      if (!document.hidden) {
+        s.lastFrame = performance.now();
+        s.raf = requestAnimationFrame(loop);
       }
+    };
+
+    const staticFrame = () => {
+      const s = stateRef.current;
+      if (!s) return;
+      recompute(performance.now());
+      s.engine.settle();
+      drawFrame();
     };
 
     let resizeTimer: number | undefined;
     const onResize = () => {
       if (resizeTimer !== undefined) clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
-        resize();
         resizeTimer = undefined;
+        const s = stateRef.current;
+        const w = window.innerWidth;
+        const dprNow = Math.min(s ? s.profile.dprCap : 2, window.devicePixelRatio || 1);
+        // iOS Safari fires resize when the URL bar shows/hides — a height-only
+        // change. Rebuilding (new engine + atlas) mid-scroll causes jank and a
+        // visible field reset, so rebuild only when width or DPR actually
+        // changes. A height-only delta is ignored; the canvas keeps its size
+        // (a faint unfilled strip at the very bottom when the toolbar collapses
+        // is imperceptible at the field's opacity).
+        if (s && w === s.lastW && dprNow === s.dpr) return;
+        resize();
+        if (reduced) staticFrame();
       }, 150);
     };
 
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("touchmove", onTouch, { passive: true });
-    window.addEventListener("touchend", onTouchEnd);
-    document.addEventListener("mouseleave", onLeave);
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("resize", onResize);
+    // the identity font loads async — rebuild the atlas once, same metrics box (§7)
+    let disposed = false;
+    document.fonts.ready.then(() => {
+      const s = stateRef.current;
+      if (disposed || !s) return;
+      s.atlas = buildAtlas(s.fontSize, s.charW, s.charH, s.dpr);
+      if (reduced) drawFrame();
+    });
 
     if (reduced) {
-      if (stateRef.current) stateRef.current.introEngine = null;
-      draw(performance.now());
-    } else {
-      const churnTimer = window.setInterval(() => {
-        const state = stateRef.current;
-        if (!state || state.paused) return;
-        const churnCount = window.innerWidth < 768 ? 10 : CHURN_COUNT;
-        for (let i = 0; i < churnCount; i++) {
-          const idx = Math.floor(Math.random() * state.buffer.length);
-          state.buffer[idx] =
-            LIGHT_BIAS[Math.floor(Math.random() * LIGHT_BIAS.length)];
-        }
-      }, CHURN_MS);
-
-      if (stateRef.current) stateRef.current.churnTimer = churnTimer;
-      stateRef.current!.raf = requestAnimationFrame(loop);
+      // §10.5: single static frame, zero rAF after first paint, no input listeners
+      staticFrame();
+      window.addEventListener("resize", onResize);
+      return () => {
+        disposed = true;
+        if (resizeTimer !== undefined) clearTimeout(resizeTimer);
+        window.removeEventListener("resize", onResize);
+        stateRef.current = null;
+      };
     }
 
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("resize", onResize);
+    stateRef.current!.raf = requestAnimationFrame(loop);
+
     return () => {
-      const state = stateRef.current;
-      if (state) {
-        cancelAnimationFrame(state.raf);
-        if (state.churnTimer) clearInterval(state.churnTimer);
-      }
+      disposed = true;
+      const s = stateRef.current;
+      if (s) cancelAnimationFrame(s.raf);
       if (resizeTimer !== undefined) clearTimeout(resizeTimer);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("touchmove", onTouch);
-      window.removeEventListener("touchend", onTouchEnd);
-      document.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", onResize);
       stateRef.current = null;
     };
   }, [resize]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden
-      className="pointer-events-none fixed inset-0 z-0"
-    />
-  );
+  return <canvas ref={canvasRef} aria-hidden className="pointer-events-none fixed inset-0 z-0" />;
 }

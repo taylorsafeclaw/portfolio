@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { ScrambleLink } from "@/components/hero/ScrambleLink";
 import { DensityResolve } from "@/components/story/DensityResolve";
 import { useMagnetic } from "@/lib/hooks/useMagnetic";
@@ -7,6 +9,33 @@ import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { SectionWrapper } from "@/components/shared/SectionWrapper";
 
 const TAGLINE_SEGMENTS = [{ text: "Let's build something." }];
+
+const CLOCK_FMT = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Los_Angeles",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+// the quietest possible proof the page is alive (§6b)
+function BayAreaClock() {
+  const reduced = useReducedMotion();
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    const tick = () => setTime(CLOCK_FMT.format(new Date()));
+    if (reduced) {
+      tick(); // static timestamp under reduced motion
+      return;
+    }
+    const id = setInterval(tick, 1000);
+    tick();
+    return () => clearInterval(id);
+  }, [reduced]);
+
+  return <span>{time || "--:--:--"}</span>;
+}
 
 export function Footer() {
   const { ref: magneticRef } = useMagnetic(200, 4);
@@ -43,7 +72,10 @@ export function Footer() {
           <span className="mx-2 text-[var(--fg-quietest)]" aria-hidden>·</span>
           <span>2026</span>
           <span className="mx-2 text-[var(--fg-quietest)]" aria-hidden>·</span>
-          <span>Bay Area</span>
+          <span>
+            Bay Area<span className="mx-2 text-[var(--fg-quietest)]" aria-hidden>·</span>
+            <BayAreaClock />
+          </span>
         </p>
       </footer>
     </SectionWrapper>

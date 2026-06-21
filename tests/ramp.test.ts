@@ -1,0 +1,125 @@
+import { describe, expect, it } from "vitest";
+import {
+  AMBIENT_CEIL,
+  ATLAS_BACKSLASH,
+  ATLAS_GLYPHS,
+  ATLAS_LEN,
+  ATLAS_PIPE,
+  FIELD_RAMP,
+  FIELD_RAMP_LEN,
+  SCRAMBLE_CHARS,
+  coverageNorm,
+  luminance,
+} from "@/lib/ascii/ramp";
+
+describe("FIELD_RAMP", () => {
+  it("has 25 steps, a true space at index 0, and TAYL0R at the dense end", () => {
+    expect(FIELD_RAMP_LEN).toBe(25);
+    expect(FIELD_RAMP[0]).toBe(" ");
+    expect([...FIELD_RAMP].slice(-6).reverse().join("")).toBe("TAYL0R");
+  });
+
+  it("keeps the name letters above the ambient ceiling", () => {
+    for (let i = 1; i <= AMBIENT_CEIL; i++) {
+      expect("TAYL0R").not.toContain(FIELD_RAMP[i]);
+    }
+  });
+
+  it("scramble charset is drawn from the mid-ramp", () => {
+    for (const ch of SCRAMBLE_CHARS) {
+      const idx = FIELD_RAMP.indexOf(ch as (typeof FIELD_RAMP)[number]);
+      expect(idx).toBeGreaterThanOrEqual(3);
+      expect(idx).toBeLessThanOrEqual(AMBIENT_CEIL);
+    }
+  });
+
+  it("atlas glyph list is the ramp plus the two flow-only strokes", () => {
+    expect(ATLAS_LEN).toBe(FIELD_RAMP_LEN + 2);
+    expect(ATLAS_GLYPHS[ATLAS_BACKSLASH]).toBe("\\");
+    expect(ATLAS_GLYPHS[ATLAS_PIPE]).toBe("|");
+  });
+});
+
+describe("luminance", () => {
+  it("is 0 at space and strictly increasing along the ramp", () => {
+    expect(luminance(0)).toBe(0);
+    let prev = 0;
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      const l = luminance(i);
+      expect(l).toBeGreaterThan(prev);
+      prev = l;
+    }
+  });
+
+  it("tops out near the spec's alpha ceilings", () => {
+    expect(luminance(AMBIENT_CEIL)).toBeGreaterThan(0.13); // ambient alpha ceiling ~0.16
+    expect(luminance(AMBIENT_CEIL)).toBeLessThan(0.18);
+    expect(luminance(FIELD_RAMP_LEN - 1)).toBeLessThanOrEqual(0.3);
+  });
+});
+
+describe("coverageNorm", () => {
+  it("keeps perceived brightness monotonic regardless of glyph shape", () => {
+    // jumbled synthetic coverages — like real glyphs, L and Y carry less ink than 0 and A
+    const coverage = new Float32Array(FIELD_RAMP_LEN);
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      coverage[i] = 0.15 + ((i * 37) % 11) / 40;
+    }
+    const norm = coverageNorm(coverage);
+    let prev = 0;
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      const perceived = luminance(i) * norm[i] * coverage[i];
+      expect(perceived).toBeGreaterThan(prev);
+      prev = perceived;
+    }
+  });
+
+  it("stays non-decreasing when thin glyphs hit the boost cap", () => {
+    // realistic low end — "·" ":" carry almost no ink, well below ref / 2.5
+    const thin = [0.015, 0.035, 0.02, 0.05];
+    const coverage = new Float32Array(FIELD_RAMP_LEN);
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      coverage[i] =
+        i <= thin.length
+          ? thin[i - 1]
+          : 0.07 + (0.3 - 0.07) * ((i - thin.length - 1) / (FIELD_RAMP_LEN - thin.length - 2));
+    }
+    const norm = coverageNorm(coverage);
+    let prev = 0;
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      const perceived = luminance(i) * norm[i] * coverage[i];
+      expect(perceived).toBeGreaterThanOrEqual(prev);
+      prev = perceived;
+    }
+  });
+
+  it("gives zero-coverage entries a norm of 1", () => {
+    const coverage = new Float32Array(FIELD_RAMP_LEN);
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      coverage[i] = i === 5 ? 0 : 0.2;
+    }
+    const norm = coverageNorm(coverage);
+    expect(norm[0]).toBe(1);
+    expect(norm[5]).toBe(1);
+  });
+
+  it("carries the ink floor across an interior zero-coverage glyph", () => {
+    // a non-rendering glyph mid-ramp must not reset the repair floor — the
+    // thin glyph right after the gap would otherwise dip below the ink before it
+    const coverage = new Float32Array(FIELD_RAMP_LEN);
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) coverage[i] = 0.1 + i * 0.02;
+    coverage[5] = 0; // interior gap
+    coverage[6] = 0.02; // thin glyph immediately after the gap
+    const norm = coverageNorm(coverage);
+    let prevInk = 0;
+    for (let i = 1; i < FIELD_RAMP_LEN; i++) {
+      if (coverage[i] <= 0) {
+        expect(norm[i]).toBe(1);
+        continue;
+      }
+      const ink = norm[i] * coverage[i];
+      expect(ink).toBeGreaterThanOrEqual(prevInk - 1e-4); // tolerance > Float32 epsilon
+      prevInk = ink;
+    }
+  });
+});

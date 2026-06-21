@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import type { Project } from "@/lib/projects";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { useScrambleWalk } from "@/lib/hooks/useScrambleWalk";
 
 const DENSITY_UP: Record<string, string> = { "▒": "▓", "▓": "█", "█": "█" };
 const ORBIT_MS = 3500;
@@ -25,6 +26,7 @@ export function WorkCard({ project, focused, onHover, onLeave, visible, index }:
   // Mouse position stored in ref — no re-render on every mousemove
   const mousePosRef = useRef({ x: 50, y: 50 });
   const reduced = useReducedMotion();
+  const titleWalk = useScrambleWalk(project.title);
 
   // Single rAF loop: drives both orbit AND spotlight via direct DOM writes.
   // No React state updates inside the loop → zero re-renders per frame.
@@ -171,8 +173,9 @@ export function WorkCard({ project, focused, onHover, onLeave, visible, index }:
             <span
               className="font-mono text-[14px] font-medium transition-colors duration-300"
               style={{ color: dimmed ? "var(--fg-quietest)" : "var(--fg-strong)" }}
+              onMouseMove={titleWalk.onMouseMove}
             >
-              {project.title}
+              {titleWalk.display}
             </span>
             <p
               className="mt-1 font-mono text-[12px] leading-[1.5] transition-colors duration-300"
