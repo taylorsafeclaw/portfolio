@@ -42,6 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${monaspaceNeon.variable} ${monaspaceXenon.variable} ${instrumentSerif.variable}`}
     >
       {/* prettier-ignore */}
@@ -53,7 +54,7 @@ export default function RootLayout({
            ██    ██   ██    ██    ██████   ██████  ██   ██
         you found the source. hi. — taylor
       */}
-      <body className="min-h-screen antialiased">
+      <body suppressHydrationWarning className="min-h-screen antialiased">
         {/* Static inline script — no user input, no XSS vector. Runs synchronously before hydration to prevent browser scroll restoration from showing below-hero content during intro animation. */}
         <script dangerouslySetInnerHTML={{__html:`(function(){try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;history.scrollRestoration='manual';window.scrollTo(0,0);document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';}catch(e){}})();`}} />
         <AsciiGrid />
