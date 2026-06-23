@@ -39,5 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# tooling
 .gstack/
 .claude/
+.agents/
+.context/
+.playwright-mcp/
+.superpowers/
