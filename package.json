@@ -10,11 +10,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "unrs-resolver"
-    ]
-  },
   "dependencies": {
     "next": "16.2.4",
     "react": "19.2.4",
