@@ -44,8 +44,8 @@ export const TRAIL_SAMPLES = 24;
 export const TRAIL_DECAY_MS = 280;
 export const TRAIL_R_SLOW = 90; // px — slow cursor draws a fine line
 export const TRAIL_R_FAST = 150; // px — fast sweep drags a broad wake
-export const TRAIL_MAX_LIFT = 8; // ramp steps — stirring reaches the letters
-export const TRAIL_GAIN = 1.5;
+export const TRAIL_MAX_LIFT = 9.5; // ramp steps — stirring reaches the letters
+export const TRAIL_GAIN = 1.85;
 
 // ripples (§3b-B/C)
 export const RIPPLE_SPEED = 0.35; // px/ms ring expansion
@@ -61,13 +61,13 @@ export const INTRO_DORMANT_END = 250;
 export const INTRO_BLOOM_END = 2600;
 export const INTRO_PEAK_END = 3600;
 export const INTRO_RECEDE_END = 5100;
-export const INTRO_CREST = 6; // ramp steps above ambient at the front line
-export const INTRO_OVERSHOOT = 1.5; // ambient multiplier behind the front
+export const INTRO_CREST = 7.5; // ramp steps above ambient at the front line
+export const INTRO_OVERSHOOT = 1.65; // ambient multiplier behind the front
 export const INTRO_JITTER_MS = 60; // per-cell arrival jitter
 const INTRO_FRONT_REACH = 1.35; // front travels past the corner so the crest clears
 const INTRO_FRONT_SIGMA = 0.08;
 const INTRO_DORMANT_MASK = 0.08; // scattered specks at alpha ≈ 0.05
-const INTRO_BREATH = 0.12; // one slow synchronized breath at peak
+const INTRO_BREATH = 0.16; // one slow synchronized breath at peak
 
 // flow strokes (§3b-A)
 export const FLOW_MIN = 3;

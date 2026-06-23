@@ -158,7 +158,7 @@ describe("FieldEngine", () => {
     let maxLift = 0;
     for (let i = 0; i < e.total; i++) maxLift = Math.max(maxLift, e.target[i] - base[i]);
     expect(maxLift).toBeGreaterThan(2);
-    expect(maxLift).toBeLessThanOrEqual(8.01);
+    expect(maxLift).toBeLessThanOrEqual(9.51);
   });
 
   it("footer gravity floods the lower viewport (§6)", () => {

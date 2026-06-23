@@ -48,6 +48,12 @@ describe("chooseCellMetrics", () => {
   it("phone keeps the base cell size (unchanged look)", () => {
     expect(chooseCellMetrics(390, 844, handheld).fontSize).toBe(handheld.baseCellPx);
   });
+  it("touch profiles use a cheaper active cadence and canvas DPR", () => {
+    const tablet = detectProfile(coarse({ vw: 1024, vh: 1366 }));
+    expect(tablet.recomputeEvery).toBeGreaterThan(desktop.recomputeEvery);
+    expect(handheld.recomputeEvery).toBe(tablet.recomputeEvery);
+    expect(handheld.dprCap).toBeLessThan(tablet.dprCap);
+  });
   it("2560 monitor caps cells at or under the desktop budget", () => {
     expect(chooseCellMetrics(2560, 1440, desktop).fontSize).toBeGreaterThan(desktop.baseCellPx);
     expect(cellsFor(2560, 1440)).toBeLessThanOrEqual(desktop.cellBudget);

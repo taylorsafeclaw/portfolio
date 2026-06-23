@@ -152,6 +152,7 @@ export function AsciiGrid() {
       const s = stateRef.current;
       if (!s) return;
       const { engine, atlas, cols, rows, charW, charH, dpr } = s;
+      const drawFlowStrokes = !s.profile.lowPowerHint;
       const cur = engine.current;
       const cov = atlas.covNorm;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -164,7 +165,7 @@ export function AsciiGrid() {
           const idx = Math.round(c);
           if (idx <= 0) continue; // sparse field: skip-draw (§8)
           let atlasIdx = idx;
-          if (idx >= FLOW_MIN && idx <= FLOW_MAX) {
+          if (drawFlowStrokes && idx >= FLOW_MIN && idx <= FLOW_MAX) {
             // §3b-A: mid-band cells render as flow-aligned strokes
             const f = engine.flowIndexAt(i);
             if (f >= 0) atlasIdx = f;
@@ -271,6 +272,7 @@ export function AsciiGrid() {
         emitClick(e.clientX, e.clientY, now); // §3b-C: touch the ink
       } else {
         s.engine.addTrailSample(e.clientX, e.clientY, now, 0); // touch/pen tap halo (§4)
+        emitClick(e.clientX, e.clientY, now);
       }
     };
 

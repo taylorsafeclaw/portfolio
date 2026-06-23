@@ -32,12 +32,12 @@ const DESKTOP: FieldProfile = {
   recomputeEvery: 2, cellBudget: 16000, lowPowerHint: false,
 };
 const TABLET: FieldProfile = {
-  name: "tablet", baseCellPx: 14, dprCap: 2, octaves: 2,
-  recomputeEvery: 3, cellBudget: 11000, lowPowerHint: true,
+  name: "tablet", baseCellPx: 15, dprCap: 1.5, octaves: 2,
+  recomputeEvery: 4, cellBudget: 9000, lowPowerHint: true,
 };
 const HANDHELD: FieldProfile = {
-  name: "handheld", baseCellPx: 15, dprCap: 1.5, octaves: 2,
-  recomputeEvery: 3, cellBudget: 4000, lowPowerHint: true,
+  name: "handheld", baseCellPx: 16, dprCap: 1.25, octaves: 2,
+  recomputeEvery: 4, cellBudget: 3200, lowPowerHint: true,
 };
 
 const HANDHELD_MAX_SHORT_SIDE = 520; // px; a coarse pointer below this is a phone
